@@ -105,6 +105,13 @@ def main():
                           type="string",
                           help="GCTX file with rankpoint correlations",
                           default=None)
+    opt_parser.add_option("--ref_allele_mode",
+                          dest="ref_allele_mode",
+                          action="store_true",
+                          help="""Instead of organizing plots by gene, will use
+                                  the wt column to determine what are the
+                                  reference alleles.""",
+                          default=False)
     opt_parser.add_option("--null_conn",
                           dest="null_conn",
                           type="string",
@@ -181,6 +188,8 @@ def main():
 
     ymin = options.ymin
     ymax = options.ymax
+
+    ref_allele_mode = options.ref_allele_mode
     
     corr_val_str = options.corr_val_str
 
@@ -201,13 +210,13 @@ def main():
     (gene2wt,
      gene2allele_call,
      gene2num_alleles,
-     allele2pvals) = parse_pred_file(pred_file, pred_col, use_c_pval)
+     allele2pvals) = parse_pred_file(pred_file, pred_col, use_c_pval,
+                                     ref_allele_mode)
     
 
     allele2distil_ids = parse_sig_info(sig_info, cell_id, plate_id)
 
     for gene in gene2wt:
-
 
         this_fig = plt.figure()
         this_fig.set_size_inches((gene2num_alleles[gene]+1)*4,
@@ -339,7 +348,7 @@ def getNullConnDist(file_name):
 
     return null_conn
 
-def parse_pred_file(pred_file, pred_col, use_c_pval):
+def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
     """
     gene2wt,
     gene2allele_call,
@@ -356,7 +365,12 @@ def parse_pred_file(pred_file, pred_col, use_c_pval):
     allele2pvals = {}
     for row in csv_reader:   
         gene = row["gene"] 
+    
         wt = row["wt"]
+
+        if ref_allele_mode:
+            gene = wt
+
         allele = row["mut"]
 
         if use_c_pval:
