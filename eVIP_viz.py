@@ -15,7 +15,7 @@ import pdb
 import csv
 import random
 
-from mutation_impact_pvals import getSelfConnectivity, getConnectivity
+from eVIP_compare import getSelfConnectivity, getConnectivity
 
 import matplotlib.pyplot as plt
 import numpy as np
