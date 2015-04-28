@@ -41,6 +41,7 @@ WT_IDX = 5
 
 DEF_IE_COL = "x_ie_a549"
 DEF_ALLELE_COL = "x_mutation_status"
+
 #################
 # END CONSTANTS #
 #################
@@ -132,6 +133,18 @@ def main():
                           type="int",
                           help="Number of iterations to run. DEF=%d" % NUM_ITERATIONS,
                           default=NUM_ITERATIONS)
+    opt_parser.add_option("--rep_null",
+                          dest="rep_null_input",
+                          type="string",
+                          help="""Optional file containing rep null values from a previous
+                                  run. Should end in _rep_null.txt""",
+                          default=None)
+    opt_parser.add_option("--conn_null",
+                          dest="conn_null_input",
+                          type="string",
+                          help="""Optional file containing connectvity null values from a previous
+                                  run. Should end in _conn_null.txt""",
+                          default=None)
     opt_parser.add_option("--ie_col",
                           dest="ie_col",
                           type="string",
@@ -178,8 +191,6 @@ def main():
     output_file_prefix = open(options.output_file_prefix + ".txt", "w")
 
     # Output distribution files
-    rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
-    conn_null_dist_out = open(options.output_file_prefix + "_conn_null.txt", "w")
 
     controls = grp.read_grp(options.controls_file)
 
@@ -199,6 +210,16 @@ def main():
     ie_col = options.ie_col
     ie_filter = options.ie_filter
 
+    rep_null_input = options.rep_null_input
+    conn_null_input = options.conn_null_input
+
+    if rep_null_input:
+        rep_nulls_from_input_str = grp.read_grp(rep_null_input)
+        rep_nulls_from_input = map(float, rep_nulls_from_input_str)
+    if conn_null_input:
+        conn_nulls_from_input_str = grp.read_grp(conn_null_input)
+        conn_nulls_from_input = map(float, conn_nulls_from_input_str)
+    
     (allele2distil_id,
      allele2WT,
      allele2gene,
@@ -215,27 +236,37 @@ def main():
         if this_control in allele2distil_id:
             clean_controls.append(this_control)
 
-    replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
+    if (not rep_null_input) or (not conn_null_input):
+        replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
                                                               allele2distil_id, 
                                                               clean_controls,
                                                               num_iterations,
                                                               num_reps)
 
+    if rep_null_input:
+        replicate_null_dist = rep_nulls_from_input
+    if conn_null_input:
+        connectivity_null_dist = conn_nulls_from_input
+
     # Print out percentiles of each null distribution
     print "Replicate null percentiles"
     print "2.5,5,10,50,90,95,97.5"
     rep_precentiles =  numpy.percentile(replicate_null_dist, [2.5,5,10,50,90,95,97.5])
-    for x in replicate_null_dist:
-        rep_null_distribution_out.write("%f\n" % x)
-    rep_null_distribution_out.close()
+    if not rep_null_input:
+        rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
+        for x in replicate_null_dist:
+            rep_null_distribution_out.write("%f\n" % x)
+        rep_null_distribution_out.close()
     print rep_precentiles 
 
     print "Connectivity null percentiles"
     print "2.5,5,10,50,90,95,97.5"
     conn_percentiles = numpy.percentile(connectivity_null_dist, [2.5,5,10,50,90,95,97.5])
-    for x in connectivity_null_dist:
-        conn_null_dist_out.write("%f\n" % x)
-    conn_null_dist_out.close()
+    if not conn_null_input:
+        conn_null_dist_out = open(options.output_file_prefix + "_conn_null.txt", "w")
+        for x in connectivity_null_dist:
+            conn_null_dist_out.write("%f\n" % x)
+        conn_null_dist_out.close()
     print conn_percentiles
 
     # WT null data
