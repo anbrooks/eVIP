@@ -352,32 +352,32 @@ def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
     if disting_pval < disting_thresh:
         if max_diff(wt_rep, mut_rep, mut_wt_conn) < mut_wt_rep_diff:
             if mut_wt_conn_pval < c_thresh:
-                return "Inert"
+                return "Neutral"
             else:
                 return "Error"
 
-        if mut_wt_conn_pval < c_thresh:
-            if mut_wt_conn < conn_null_med:
-                return "DOM-NEG"
+#       if mut_wt_conn_pval < c_thresh:
+#           if mut_wt_conn < conn_null_med:
+#               return "DOM-NEG"
 
         if mut_wt_rep_pval < mut_wt_thresh:
             if wt_rep < mut_rep:
                 if mut_rep - wt_rep >= mut_wt_rep_diff:
                     return "GOF"
                 else:
-                    return "COF"
+                    return "NOS"
             elif wt_rep > mut_rep:
                 if wt_rep - mut_rep >= mut_wt_rep_diff:
                     return "LOF"
                 else:
-                    return "COF"
+                    return "NOS"
             else:
-                return "COF"
+                return "NOS"
         else:
-            return "COF"
+            return "NOS"
 
     if mut_wt_conn_pval < c_thresh:
-        return "Inert"
+        return "Neutral"
 
     return "NI"   
 
