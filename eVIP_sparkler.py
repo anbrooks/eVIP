@@ -49,7 +49,7 @@ INERT_COL = colorConverter.to_rgba("#000000", 1)
 NI_COL = colorConverter.to_rgba("#ffffff", 1) 
 
 MAIN_MARKER = 'o'
-NEG_MARKER = 'x'
+NEG_MARKER = 'o'
 
 
 XMIN=0
@@ -139,10 +139,15 @@ def main():
                                   the wt column to determine what are the
                                   reference alleles.""",
                           default=False)
-    opt_parser.add_option("--thresh",
-                          dest="thresh",
+    opt_parser.add_option("--x_thresh",
+                          dest="x_thresh",
                           type="float",
-                          help="-log10(P) threshold of significance",
+                          help="Threshold of significance",
+                          default=None)
+    opt_parser.add_option("--y_thresh",
+                          dest="y_thresh",
+                          type="float",
+                          help="Threshold of impact direction",
                           default=None)
     opt_parser.add_option("--use_c_pval",
                           dest="use_c_pval",
@@ -206,7 +211,8 @@ def main():
 	
     # validate the command line arguments
     opt_parser.check_required("--pred_file")
-    opt_parser.check_required("--thresh")
+    opt_parser.check_required("--x_thresh")
+    opt_parser.check_required("--y_thresh")
 #    opt_parser.check_required("--sig_info")
 #   opt_parser.check_required("--gctx")
 #   opt_parser.check_required("--null_conn")
@@ -226,7 +232,8 @@ def main():
         out_dir = os.path.abspath(options.out_dir)
         print "Creating output directory: %s" % out_dir 
 
-    thresh = options.thresh
+    x_thresh = getNegLog10(options.x_thresh, options.xmax)
+    y_thresh = getNegLog10(options.y_thresh, options.ymax)
     annotate = options.annotate
     pred_col = DEF_PRED_COL 
     ref_allele_mode = options.ref_allele_mode
@@ -260,7 +267,8 @@ def main():
      gene2allele,
      gene2col,
      gene_type2pred2count,
-     gene2markerstyle) = parse_pred_file(pred_file, thresh, pred_col, use_c_pval, gene2type, ref_allele_mode)
+     gene2markerstyle) = parse_pred_file(pred_file, x_thresh, y_thresh,
+                                         pred_col, use_c_pval, gene2type, ref_allele_mode, xmax, ymax)
 
     # Print out gene type and prediction counts
     for gene_type in gene_type2pred2count:
@@ -410,7 +418,7 @@ def main():
 #                            gene2neg_log_p[gene][i]),
 #                           textcoords='data')
 
-        plt.axvline(x=thresh, color="grey", ls = THRESH_LS)
+        plt.axvline(x=x_thresh, color="grey", ls = THRESH_LS)
 #        plt.axvline(x=5, color="grey", ls = 'dashed')
 #        plt.axhline(y=thresh, color="grey", ls = THRESH_LS)  
 #        plt.axhline(y=-thresh, color="grey", ls = THRESH_LS)
@@ -443,7 +451,7 @@ def main():
         # make legend
 #       predictions = ["GOF", "LOF", "COF-Likely GOF", "COF-Likely LOF", "Inert", "NI"]
 #       colors = [GOF_COL, LOF_COL, COF_PLUS_COL, COF_MINUS_COL, "black","white"]
-        predictions = ["GOF", "LOF", "COF", "Inert"]
+        predictions = ["DOM", "LOF", "NOS", "Neutral"]
         colors = [GOF_COL, LOF_COL, COF_COL, "black"]
 
         recs = []
@@ -512,7 +520,7 @@ def main():
 #                        marker=mmarkers.MarkerStyle(gene_type2data[gene_type]["markerstyle"]),
 #                       linewidths=0)
 
-            plt.axvline(x=thresh, color="grey", ls = THRESH_LS)
+            plt.axvline(x=x_thresh, color="grey", ls = THRESH_LS)
 #            plt.axhline(y=thresh, color="grey", ls = THRESH_LS)  
 #            plt.axhline(y=-thresh, color="grey", ls = THRESH_LS)
 
@@ -606,7 +614,7 @@ def main():
 
 #    plt.axvline(x=5, color="grey", ls = 'dashed')
 #    plt.axhline(y=0, color="grey")
-    plt.axvline(x=thresh, color="grey", ls = THRESH_LS)
+    plt.axvline(x=x_thresh, color="grey", ls = THRESH_LS)
 #    plt.axhline(y=thresh, color="grey", ls = THRESH_LS)
 #    plt.axhline(y=-thresh, color="grey", ls = THRESH_LS)
 
@@ -667,9 +675,9 @@ def formatLine(line):
     line = line.replace("\n","")
     return line
 
-def getNegLog10(p_val):
+def getNegLog10(p_val, max_val):
     if p_val == 0.0:
-        return INFINITY
+        return max_val
 
     return -math.log(p_val, 10)
     
@@ -691,7 +699,7 @@ def parseGeneColor(by_gene_color_file_name):
         
     return gene2label
 
-def parse_pred_file(pred_file, thresh, pred_col, use_c_pval, gene2type, ref_allele_mode):
+def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2type, ref_allele_mode, xmax, ymax):
     """
     (gene2mut_wt,
      gene2mut_wt_rep_p,
@@ -717,11 +725,11 @@ def parse_pred_file(pred_file, thresh, pred_col, use_c_pval, gene2type, ref_alle
                             "ONC-NEG":{}}
 
     for gene_type in gene_type2pred2count:
-        gene_type2pred2count[gene_type]["GOF"] = 0
+        gene_type2pred2count[gene_type]["DOM"] = 0
         gene_type2pred2count[gene_type]["LOF"] = 0
-        gene_type2pred2count[gene_type]["COF"] = 0
+        gene_type2pred2count[gene_type]["NOS"] = 0
         gene_type2pred2count[gene_type]["DOM-NEG"] = 0
-        gene_type2pred2count[gene_type]["Inert"] = 0
+        gene_type2pred2count[gene_type]["Neutral"] = 0
 
     for row in csv_reader:   
         gene = row["gene"] 
@@ -740,13 +748,13 @@ def parse_pred_file(pred_file, thresh, pred_col, use_c_pval, gene2type, ref_alle
 
         mut_wt_conn = float(row["mut_wt_connectivity"])
         if use_c_pval:
-            mut_wt_rep_pval = getNegLog10(float(row["mut_wt_rep_c_pval"]))
-            mut_wt_conn_pval = getNegLog10(float(row["mut_wt_conn_null_c_pval"]))
-            impact_pval = getNegLog10(float(row["wt_mut_rep_vs_wt_mut_conn_c_pval"]))
+            mut_wt_rep_pval = getNegLog10(float(row["mut_wt_rep_c_pval"]), ymax)
+            mut_wt_conn_pval = getNegLog10(float(row["mut_wt_conn_null_c_pval"]), xmax)
+            impact_pval = getNegLog10(float(row["wt_mut_rep_vs_wt_mut_conn_c_pval"]), xmax)
         else:
-            mut_wt_rep_pval = getNegLog10(float(row["mut_wt_rep_pval"]))
-            mut_wt_conn_pval = getNegLog10(float(row["mut_wt_conn_null_pval"]))
-            impact_pval = getNegLog10(float(row["wt_mut_rep_vs_wt_mut_conn_pval"]))
+            mut_wt_rep_pval = getNegLog10(float(row["mut_wt_rep_pval"]), ymax)
+            mut_wt_conn_pval = getNegLog10(float(row["mut_wt_conn_null_pval"]), xmax)
+            impact_pval = getNegLog10(float(row["wt_mut_rep_vs_wt_mut_conn_pval"]), xmax)
 
         # Update prediction count
         if pred != "NI":
@@ -793,23 +801,23 @@ def parse_pred_file(pred_file, thresh, pred_col, use_c_pval, gene2type, ref_alle
         gene2diff_score[gene].append(diff)
 
         # Other features based on significance
-        if pred == "GOF":
+        if pred == "DOM":
             gene2col[gene].append(GOF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "LOF":
             gene2col[gene].append(LOF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
-        elif pred == "Inert":
+        elif pred == "Netural":
             gene2col[gene].append(INERT_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "NI":
             gene2col[gene].append(NI_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
-        elif pred == "COF":
+        elif pred == "NOS":
             gene2col[gene].append(COF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "DOM-NEG":
-            if mut_wt_rep_pval < thresh:
+            if mut_wt_rep_pval < y_thresh:
                 gene2col[gene].append(COF_COL)
             else:
                 if mut_rep >= wt_rep:
