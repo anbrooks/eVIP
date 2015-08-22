@@ -354,13 +354,16 @@ def main():
                                    gene2mut_wt_rep_p[gene],
                                    gene2col[gene])
 
-        plt.scatter(main_markers["x"],
+        try:
+            plt.scatter(main_markers["x"],
                     main_markers["y"],
                     s = MARKER_SIZE,
                     c=main_markers["col"],
                     marker=MAIN_MARKER,
                     edgecolors="none",
                     linewidth=0)
+        except:
+            pdb.set_trace()
 
         plt.scatter(neg_markers["x"],
                     neg_markers["y"],
@@ -807,7 +810,7 @@ def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2ty
         elif pred == "LOF":
             gene2col[gene].append(LOF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
-        elif pred == "Netural":
+        elif pred == "Neutral":
             gene2col[gene].append(INERT_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "NI":
