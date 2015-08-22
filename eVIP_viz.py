@@ -27,7 +27,7 @@ import cmap.io.gct as gct
 #############
 # CONSTANTS #
 #############
-PRED_TYPE = ["GOF","LOF","COF", "DOM-NEG", "Inert","NI"]
+PRED_TYPE = ["DOM","LOF","NOS", "DOM-NEG", "Neutral","NI"]
 #DEF_PRED_COL = "Scenario_7__decision_tree_COF"
 DEF_PRED_COL = "prediction"
 
