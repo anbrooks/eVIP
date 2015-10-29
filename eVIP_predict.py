@@ -363,18 +363,18 @@ def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
         if mut_wt_rep_pval < mut_wt_thresh:
             if wt_rep < mut_rep:
                 if mut_rep - wt_rep >= mut_wt_rep_diff:
-                    return "DOM"
+                    return "GOF"
                 else:
-                    return "NOS"
+                    return "COF"
             elif wt_rep > mut_rep:
                 if wt_rep - mut_rep >= mut_wt_rep_diff:
                     return "LOF"
                 else:
-                    return "NOS"
+                    return "COF"
             else:
-                return "NOS"
+                return "COF"
         else:
-            return "NOS"
+            return "COF"
 
     if mut_wt_conn_pval < c_thresh:
         return "Neutral"
