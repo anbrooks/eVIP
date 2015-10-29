@@ -66,7 +66,7 @@ def main():
     opt_parser.add_option("-b",
                           dest="benchmark",
                           type="string",
-                          help="Table of benchmark calls of DOM, LOF, or Neutral",
+                          help="Table of benchmark calls of GOF, LOF, or Neutral",
                           default=None)
     opt_parser.add_option("--gof_accuracy",
                           dest="gof_accuracy",
@@ -146,14 +146,14 @@ def main():
             if lineList[i] == mutation2known[mut]:
                 pred_ctr[i] += 1.0
             else:
-                # Allow for NOS, DOM-NEG to match with DOM and LOF
-                if lineList[i] == "NOS" or lineList[i] == "DOM-NEG":
-                    if mutation2known[mut] == "DOM" or mutation2known[mut] == "LOF" or mutation2known[mut] == "NOS":
+                # Allow for COF, GOF-NEG to match with GOF and LOF
+                if lineList[i] == "COF" or lineList[i] == "GOF-NEG":
+                    if mutation2known[mut] == "GOF" or mutation2known[mut] == "LOF" or mutation2known[mut] == "COF":
                         pred_ctr[i] += 1.0
 
             if gof_accuracy:
-                if mutation2known[mut] == "DOM":
-                    if lineList[i] == "DOM" or lineList[i] == "NOS":
+                if mutation2known[mut] == "GOF":
+                    if lineList[i] == "GOF" or lineList[i] == "COF":
                         gof_pred_ctr[i] += 1.0
                 else:
                     if lineList[i] == "LOF" or lineList[i] == "Neutral":
@@ -163,17 +163,17 @@ def main():
             pred_matrix[i][mutation2known[mut]][lineList[i]] += 1
 
             # TP, FP, TN, FN
-            if ((mutation2known[mut] == "DOM" or mutation2known[mut] == "LOF" or mutation2known[mut] == "NOS") and 
-                (lineList[i] == "DOM" or lineList[i] == "LOF" or lineList[i] == "NOS" or lineList[i] == "DOM-NEG")):
+            if ((mutation2known[mut] == "GOF" or mutation2known[mut] == "LOF" or mutation2known[mut] == "COF") and 
+                (lineList[i] == "GOF" or lineList[i] == "LOF" or lineList[i] == "COF" or lineList[i] == "GOF-NEG")):
                 tp_calls[i] += 1.0
-            if mutation2known[mut] == "Neutral" and (lineList[i] == "DOM" or 
-                                                   lineList[i] == "NOS" or 
+            if mutation2known[mut] == "Neutral" and (lineList[i] == "GOF" or 
+                                                   lineList[i] == "COF" or 
                                                    lineList[i] == "LOF" or
-                                                   lineList[i] == "DOM-NEG"):
+                                                   lineList[i] == "GOF-NEG"):
                 fp_calls[i] += 1.0
             if mutation2known[mut] == "Neutral" and lineList[i] == "Neutral":
                 tn_calls[i] += 1.0
-            if ((mutation2known[mut] == "DOM" or mutation2known[mut] == "LOF" or mutation2known[mut] == "NOS") and 
+            if ((mutation2known[mut] == "GOF" or mutation2known[mut] == "LOF" or mutation2known[mut] == "COF") and 
                 (lineList[i] == "Neutral" or lineList[i] == "NI")):
                 fn_calls[i] += 1.0
             
@@ -188,7 +188,7 @@ def main():
 
     if gof_accuracy:
         print 
-        print "DOM accuracy"
+        print "GOF accuracy"
         for i in range(num_pred):
             try:
                 print "Prediction %d accuracy: %.4f" % (i+1,
@@ -218,29 +218,29 @@ def main():
     for i in range(num_pred):
         print 
         print "Prediction %d:" % (i + 1)
-        print "Known\tDOM_pred\tLOF_pred\tNOS_pred\tDOM-NEG_pred\tNeutral_pred\tNI_pred"
-        print "DOM\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["DOM"]["DOM"],
-                                       pred_matrix[i]["DOM"]["LOF"],
-                                       pred_matrix[i]["DOM"]["NOS"],
-                                       pred_matrix[i]["DOM"]["DOM-NEG"],
-                                       pred_matrix[i]["DOM"]["Neutral"],
-                                       pred_matrix[i]["DOM"]["NI"])
-        print "LOF\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["LOF"]["DOM"],
+        print "Known\tGOF_pred\tLOF_pred\tCOF_pred\tGOF-NEG_pred\tNeutral_pred\tNI_pred"
+        print "GOF\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["GOF"]["GOF"],
+                                       pred_matrix[i]["GOF"]["LOF"],
+                                       pred_matrix[i]["GOF"]["COF"],
+                                       pred_matrix[i]["GOF"]["GOF-NEG"],
+                                       pred_matrix[i]["GOF"]["Neutral"],
+                                       pred_matrix[i]["GOF"]["NI"])
+        print "LOF\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["LOF"]["GOF"],
                                        pred_matrix[i]["LOF"]["LOF"],
-                                       pred_matrix[i]["LOF"]["NOS"],
-                                       pred_matrix[i]["LOF"]["DOM-NEG"],
+                                       pred_matrix[i]["LOF"]["COF"],
+                                       pred_matrix[i]["LOF"]["GOF-NEG"],
                                        pred_matrix[i]["LOF"]["Neutral"],
                                        pred_matrix[i]["LOF"]["NI"])
-        print "NOS\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["NOS"]["DOM"],
-                                       pred_matrix[i]["NOS"]["LOF"],
-                                       pred_matrix[i]["NOS"]["NOS"],
-                                       pred_matrix[i]["NOS"]["DOM-NEG"],
-                                       pred_matrix[i]["NOS"]["Neutral"],
-                                       pred_matrix[i]["NOS"]["NI"])
-        print "Neutral\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["Neutral"]["DOM"],
+        print "COF\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["COF"]["GOF"],
+                                       pred_matrix[i]["COF"]["LOF"],
+                                       pred_matrix[i]["COF"]["COF"],
+                                       pred_matrix[i]["COF"]["GOF-NEG"],
+                                       pred_matrix[i]["COF"]["Neutral"],
+                                       pred_matrix[i]["COF"]["NI"])
+        print "Neutral\t%d\t%d\t%d\t%d\t%d\t%d" % (pred_matrix[i]["Neutral"]["GOF"],
                                        pred_matrix[i]["Neutral"]["LOF"],
-                                       pred_matrix[i]["Neutral"]["NOS"],
-                                       pred_matrix[i]["Neutral"]["DOM-NEG"],
+                                       pred_matrix[i]["Neutral"]["COF"],
+                                       pred_matrix[i]["Neutral"]["GOF-NEG"],
                                        pred_matrix[i]["Neutral"]["Neutral"],
                                        pred_matrix[i]["Neutral"]["NI"])
 
@@ -268,28 +268,28 @@ def getPredRecord(num_pred):
     pred_matrix = [{} for n in range(num_pred)]
 
     for this_dict in pred_matrix:
-        this_dict["DOM"] = {"DOM":0,
+        this_dict["GOF"] = {"GOF":0,
                             "LOF":0,
-                            "NOS":0,
-                            "DOM-NEG":0,
+                            "COF":0,
+                            "GOF-NEG":0,
                             "Neutral":0,
                             "NI":0}
-        this_dict["LOF"] = {"DOM":0,
+        this_dict["LOF"] = {"GOF":0,
                             "LOF":0,
-                            "NOS":0,
-                            "DOM-NEG":0,
+                            "COF":0,
+                            "GOF-NEG":0,
                             "Neutral":0,
                             "NI":0}
-        this_dict["NOS"] = {"DOM":0,
+        this_dict["COF"] = {"GOF":0,
                             "LOF":0,
-                            "NOS":0,
-                            "DOM-NEG":0,
+                            "COF":0,
+                            "GOF-NEG":0,
                             "Neutral":0,
                             "NI":0}
-        this_dict["Neutral"] = {"DOM":0,
+        this_dict["Neutral"] = {"GOF":0,
                               "LOF":0,
-                              "NOS":0,
-                              "DOM-NEG":0,
+                              "COF":0,
+                              "GOF-NEG":0,
                               "Neutral":0,
                               "NI":0}
 
