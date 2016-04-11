@@ -27,7 +27,7 @@ import cmap.io.gct as gct
 #############
 # CONSTANTS #
 #############
-PRED_TYPE = ["DOM","LOF","NOS", "DOM-NEG", "Neutral","NI"]
+PRED_TYPE = ["GOF","LOF","COF", "DOM-NEG", "Neutral","NI"]
 #DEF_PRED_COL = "Scenario_7__decision_tree_COF"
 DEF_PRED_COL = "prediction"
 
@@ -35,6 +35,7 @@ DEF_PRED_COL = "prediction"
 WT_RANGE = [9,11]
 MUT_RANGE = [19,21]
 CONN_RANGE = [29,31]
+#NULL_CONN_RANGE = [36,44]
 
 JITTER_XTICKS = [10, 20, 30]
 XMAX = 40
@@ -42,6 +43,9 @@ XMAX = 40
 DEF_YMIN = -100
 DEF_YMAX = 100
 DEF_CORR_VAL_STR = "row median rankpoints"
+
+Z_MIN=-10
+Z_MAX=10
 #################
 # END CONSTANTS #
 #################
@@ -103,7 +107,13 @@ def main():
     opt_parser.add_option("--gctx",
                           dest="gctx",
                           type="string",
-                          help="GCTX file with rankpoint correlations",
+                          help="GCTX file with correlations",
+                          default=None)
+    opt_parser.add_option("--sig_gctx",
+                          dest="sig_gctx",
+                          type="string",
+                          help="""GCTX containing signature data. For L1000, this
+                                  would  the Z-score data""",
                           default=None)
     opt_parser.add_option("--ref_allele_mode",
                           dest="ref_allele_mode",
@@ -200,8 +210,15 @@ def main():
 
     null_conn = getNullConnDist(options.null_conn)
 
+#   null_x_vals = []
+#   for val in null_conn:
+#       null_x_vals.append(random.uniform(NULL_CONN_RANGE[0], NULL_CONN_RANGE[1]))
+
     this_gctx = gct.GCT(options.gctx)
     this_gctx.read()
+
+    sig_gctx = gct.GCT(options.sig_gctx)
+    sig_gctx.read()
 
     # Process predictions
     # allele2pvals = {allele:[mut vs wt pval, 
@@ -250,6 +267,15 @@ def main():
 
         for type in PRED_TYPE:
             for allele in gene2allele_call[gene][type]:
+
+                # CREATE SCATTERPLOT FIGURE
+                plot_signatures(pdf, out_dir, 
+                                sig_gctx.frame,
+                                gene2wt[gene],
+                                allele,
+                                allele2distil_ids[gene2wt[gene]],
+                                allele2distil_ids[allele])
+
                 # PLOT HEATMAP
                 this_hm_ax = plt.subplot2grid(grid_size, 
                                              (0, col_counter))
@@ -290,6 +316,8 @@ def main():
                             wt_self_row_medians,
                             mt_self_row_medians,
                             wt_mut_row_medians,
+#                            null_x_vals,
+#                            null_conn,
                             allele2pvals[allele][0],
                             allele2pvals[allele][1],
                             use_c_pval,
@@ -468,6 +496,8 @@ def plot_jitter(jitter_ax, col_counter,
                 wt_self_row_medians, 
                 mt_self_row_medians,
                 wt_mut_row_medians,
+#                null_x_vals,
+#                null_conn,
                 wt_mut_rep_pval_text,
                 wt_vs_mut_wt_conn_pval_text,
                 use_c_pval,
@@ -488,9 +518,13 @@ def plot_jitter(jitter_ax, col_counter,
     for val in wt_mut_row_medians:
         y_vals.append(val)
         x_vals.append(random.randint(CONN_RANGE[0], CONN_RANGE[1]))
+#   for i in range(len(null_conn)):
+#       y_vals.append(null_conn[i])
+#       x_vals.append(null_x_vals[i])
 
     jitter_ax.plot(x_vals, y_vals,
-                   'k.')
+                   'k.',
+                   c=((0,0,0,0.25)))
 
     jitter_ax.set_ylim(ymin,ymax)
     jitter_ax.set_xlim(0, XMAX)
@@ -500,7 +534,8 @@ def plot_jitter(jitter_ax, col_counter,
     jitter_ax.set_xticks(JITTER_XTICKS)
     jitter_ax.set_xticklabels(["wt",
                                "mut",
-                               "wt-mut"],
+                               "wt-mut",
+                               "random"],
 #                               rotation=45,
 #                               ha='right',
                                size='x-small')
@@ -540,6 +575,62 @@ def plot_rep_heatmap(heatmap_ax, df, distil_ids1, distil_ids2, title, ymin, ymax
 
     return this_im
 
+def plot_signatures(pdf, out_dir, sig_gctx_frame, wt_allele, mut_allele,
+                    wt_distil_ids, mut_distil_ids):
+    num_reps = len(wt_distil_ids)
+    this_fig = plt.figure()
+    this_fig.set_size_inches(((4*num_reps)*2), (4*num_reps)*2)
+
+    grid_size = (num_reps*2, num_reps*2)
+
+    all_distil_ids = wt_distil_ids + mut_distil_ids
+   
+    for i in range(num_reps * 2):
+        for j in range(i,num_reps*2):
+            this_ax = plt.subplot2grid(grid_size, (i,j))
+            if i == j:
+                if i < num_reps:
+                    this_ax.text(0.25,0.5,
+                                 wt_allele,
+                                 size='large') 
+                else:
+                    this_ax.text(0.25,0.5,
+                                 mut_allele,
+                                 size='large',
+                                 color='red') 
+                continue
+
+            # linear fit to data
+            fit = np.polyfit(sig_gctx_frame.loc[:,all_distil_ids[i]],
+                             sig_gctx_frame.loc[:,all_distil_ids[j]],
+                             deg=1)
+
+            this_ax.plot(sig_gctx_frame.loc[:,all_distil_ids[i]],
+                         sig_gctx_frame.loc[:,all_distil_ids[j]],
+                         'k.',
+                         c=(0,0,0,0.1))
+
+            x_vals = np.arange(Z_MIN, Z_MAX)
+
+            # linear fit plot
+            this_ax.plot(x_vals,
+                         fit[0]*x_vals + fit[1],
+                         "-",c=(1,0,0,0.5))
+
+            # x=y plot
+            this_ax.plot(x_vals, x_vals,
+                         "--",c=(0,0,0,0.5))
+
+            this_ax.set_xlim(Z_MIN,Z_MAX)
+            this_ax.set_ylim(Z_MIN,Z_MAX)
+    
+    if pdf:
+        this_fig.savefig("%s/%s_%s_scatter_plots.pdf" % (out_dir, wt_allele, mut_allele),
+                         format="pdf")
+    else:
+        this_fig.savefig("%s/%s_%s_scatter_plots.png" % (out_dir, wt_allele, mut_allele))
+
+    plt.close(this_fig)
 #################
 # END FUNCTIONS #	
 #################	
