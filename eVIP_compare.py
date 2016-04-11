@@ -16,9 +16,7 @@ import math
 
 import random
 
-#Commented out after running compare script. Will need to remove comment to run
-# this script
-#import rpy2.robjects as robjects
+import rpy2.robjects as robjects
 
 import cmap.io.gct as gct
 import cmap.io.plategrp as grp
