@@ -9,5 +9,5 @@ Requirements:
         ></li>
        </ul>
   </li>
-  <li>rpy2:http://rpy2.bitbucket.org/ </li>
+  <li>rpy2: http://rpy2.bitbucket.org/ </li>
 </ol>
