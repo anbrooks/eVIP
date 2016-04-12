@@ -27,7 +27,6 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-from helperFunctions import updateDictOfSets, updateDictOfLists
 #############
 # CONSTANTS #
 #############
@@ -782,6 +781,23 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
                 allele2WT[allele] = this_WT
 
     return allele2distil_id, allele2WT, allele2gene, allele2cell_id, list(WT_alleles)
+
+def updateDictOfLists(d, key, item):
+    """
+    """
+    try:
+        d[key].append(item)
+    except KeyError:
+        d[key] = [item]
+
+def updateDictOfSets(d, key, item):
+    """
+    Similar functionality as updateDictOfLists
+    """
+    try:
+        d[key].add(item)
+    except KeyError:
+        d[key] = set([item])
 
 #################
 # END FUNCTIONS #	
