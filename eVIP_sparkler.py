@@ -213,7 +213,7 @@ def main():
     opt_parser.check_required("--pred_file")
     opt_parser.check_required("--x_thresh")
     opt_parser.check_required("--y_thresh")
-#    opt_parser.check_required("--sig_info")
+    opt_parser.check_required("--by_gene_color")
 #   opt_parser.check_required("--gctx")
 #   opt_parser.check_required("--null_conn")
     opt_parser.check_required("--out_dir")
@@ -270,20 +270,15 @@ def main():
      gene2markerstyle) = parse_pred_file(pred_file, x_thresh, y_thresh,
                                          pred_col, use_c_pval, gene2type, ref_allele_mode, xmax, ymax)
 
-    # Print out gene type and prediction counts
-    for gene_type in gene_type2pred2count:
-        print "###%s###" % gene_type
-        for pred in gene_type2pred2count[gene_type]:
-            print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
+    if gene2type:
+        # Print out gene type and prediction counts
+        for gene_type in gene_type2pred2count:
+            print "###%s###" % gene_type
+            for pred in gene_type2pred2count[gene_type]:
+                print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
 
-    all_mut_wt = []   
-    all_mut_wt_rep_p = []   
-    all_neg_log_p = []
-    all_col = []
-    all_diff_score = []
-    all_markerstyle = []
 
-    gene_type2data = {"ONC":{"mut_wt":[],
+        gene_type2data = {"ONC":{"mut_wt":[],
                              "mut_wt_rep_p":[],
                              "neg_log_p":[],
                              "markerstyle":[],
@@ -303,6 +298,12 @@ def main():
                                  "neg_log_p":[],
                                  "markerstyle":[],
                                  "col":[]}}
+    all_mut_wt = []   
+    all_mut_wt_rep_p = []   
+    all_neg_log_p = []
+    all_col = []
+    all_diff_score = []
+    all_markerstyle = []
 
     for gene in gene2allele:
 
@@ -454,7 +455,7 @@ def main():
         # make legend
 #       predictions = ["GOF", "LOF", "COF-Likely GOF", "COF-Likely LOF", "Inert", "NI"]
 #       colors = [GOF_COL, LOF_COL, COF_PLUS_COL, COF_MINUS_COL, "black","white"]
-        predictions = ["DOM", "LOF", "NOS", "Neutral"]
+        predictions = ["GOF", "LOF", "COF", "Neutral"]
         colors = [GOF_COL, LOF_COL, COF_COL, "black"]
 
         recs = []
@@ -728,9 +729,9 @@ def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2ty
                             "ONC-NEG":{}}
 
     for gene_type in gene_type2pred2count:
-        gene_type2pred2count[gene_type]["DOM"] = 0
+        gene_type2pred2count[gene_type]["GOF"] = 0
         gene_type2pred2count[gene_type]["LOF"] = 0
-        gene_type2pred2count[gene_type]["NOS"] = 0
+        gene_type2pred2count[gene_type]["COF"] = 0
         gene_type2pred2count[gene_type]["DOM-NEG"] = 0
         gene_type2pred2count[gene_type]["Neutral"] = 0
 
@@ -762,13 +763,14 @@ def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2ty
         # Update prediction count
         if pred != "NI":
             gene_root = gene.split("_")[0]
-            if gene2type[gene_root] in gene_type2pred2count:
-                this_type = gene2type[gene_root]
-                if gene2type[gene_root] == "TSG":
-                    if gene_root != "TP53":
-                        gene_type2pred2count["TSG_noTP53"][pred] += 1
-   
-                gene_type2pred2count[this_type][pred] += 1
+            if gene2type:
+                if gene2type[gene_root] in gene_type2pred2count:
+                    this_type = gene2type[gene_root]
+                    if gene2type[gene_root] == "TSG":
+                        if gene_root != "TP53":
+                            gene_type2pred2count["TSG_noTP53"][pred] += 1
+       
+                    gene_type2pred2count[this_type][pred] += 1
 
 
         # Initiatite dictionaries
@@ -804,7 +806,7 @@ def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2ty
         gene2diff_score[gene].append(diff)
 
         # Other features based on significance
-        if pred == "DOM":
+        if pred == "GOF":
             gene2col[gene].append(GOF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "LOF":
@@ -816,7 +818,7 @@ def parse_pred_file(pred_file, x_thresh, y_thresh, pred_col, use_c_pval, gene2ty
         elif pred == "NI":
             gene2col[gene].append(NI_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
-        elif pred == "NOS":
+        elif pred == "COF":
             gene2col[gene].append(COF_COL)
             gene2markerstyle[gene].append(MAIN_MARKER)
         elif pred == "DOM-NEG":
