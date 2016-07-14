@@ -43,6 +43,7 @@ XMAX = 40
 DEF_YMIN = -100
 DEF_YMAX = 100
 DEF_CORR_VAL_STR = "row median rankpoints"
+DEF_ALLELE_COL = "x_mutation_status"
 
 Z_MIN=-10
 Z_MAX=10
@@ -150,6 +151,12 @@ def main():
                           type="string",
                           help="String used to label the correlation value. DEF=\"%s\"" % DEF_CORR_VAL_STR,
                           default=DEF_CORR_VAL_STR)
+    opt_parser.add_option("--allele_col",
+                          dest="allele_col",
+                          type="string",
+                          help="""Column name that indicates the allele names.
+                                  DEF=%s""" % DEF_ALLELE_COL,
+                          default=DEF_ALLELE_COL)
     opt_parser.add_option("--use_c_pval",
                           dest="use_c_pval",
                           action="store_true",
@@ -199,6 +206,8 @@ def main():
     ymin = options.ymin
     ymax = options.ymax
 
+    allele_col = options.allele_col
+
     ref_allele_mode = options.ref_allele_mode
     
     corr_val_str = options.corr_val_str
@@ -231,7 +240,7 @@ def main():
                                      ref_allele_mode)
     
 
-    allele2distil_ids = parse_sig_info(sig_info, cell_id, plate_id)
+    allele2distil_ids = parse_sig_info( sig_info, allele_col, cell_id, plate_id)
 
     for gene in gene2wt:
 
@@ -438,7 +447,7 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
 
     return gene2wt, gene2allele_call, gene2num_alleles, allele2pvals
 
-def parse_sig_info(sig_info, cell_id=None, plate_id=None):
+def parse_sig_info(sig_info, allele_col, cell_id=None, plate_id=None):
     allele2distil_ids = {}
     
     csv_reader = csv.DictReader(sig_info, delimiter="\t")
@@ -451,7 +460,7 @@ def parse_sig_info(sig_info, cell_id=None, plate_id=None):
             if plate_id not in row["sig_id"]:
                 continue
 
-        allele = row["x_mutation_status"]
+        allele = row[allele_col]
         distil_id_field = row["distil_id"]
         distil_ids = distil_id_field.split("|")
         allele2distil_ids[allele] = distil_ids
