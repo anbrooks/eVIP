@@ -11,3 +11,5 @@ Requirements:
   </li>
   <li>rpy2: http://rpy2.bitbucket.org/ </li>
 </ol>
+
+More documentation coming soon!
