@@ -9,7 +9,7 @@
 
 
 import sys
-import optparse 
+import optparse
 import os
 import pdb
 import math
@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 #############
 NUM_ITERATIONS = 1000
 NUM_REPS = 3
+IE_FILTER = 0
 
 #LOG10_ZERO = 10.0
 LOG10_ZERO = 35.0
@@ -68,14 +69,14 @@ class OptionParser(optparse.OptionParser):
 ###############
 # END CLASSES #
 ###############
- 
+
 ########
-# MAIN #	
+# MAIN #
 ########
 def main():
-	
+
     opt_parser = OptionParser()
-   
+
     # Add Options. Required options should have default=None
     opt_parser.add_option("--sig_info",
                           dest="sig_info",
@@ -156,7 +157,7 @@ def main():
                           help="""Threshold for infection efficiency. Any wildtype
                                   or mutant alleles having an ie below this
                                   threshold, will be removed""",
-                          default=None)
+                          default=IE_FILTER)
     opt_parser.add_option("--num_reps",
                           dest="num_reps",
                           type="int",
@@ -177,7 +178,7 @@ def main():
                           default=None)
 
     (options, args) = opt_parser.parse_args()
-	
+
     # validate the command line arguments
     opt_parser.check_required("--sig_info")
     opt_parser.check_required("--gctx")
@@ -204,7 +205,7 @@ def main():
     this_gctx.read()
 
     num_iterations = options.num_iterations
-    num_reps = options.num_reps 
+    num_reps = options.num_reps
 
     ie_col = options.ie_col
     ie_filter = options.ie_filter
@@ -218,12 +219,12 @@ def main():
     if conn_null_input:
         conn_nulls_from_input_str = grp.read_grp(conn_null_input)
         conn_nulls_from_input = map(float, conn_nulls_from_input_str)
-    
+
     (allele2distil_id,
      allele2WT,
      allele2gene,
      allele2cell_id,
-     WT_alleles) = parse_sig_info(sig_info_file, 
+     WT_alleles) = parse_sig_info(sig_info_file,
                                   ref2test_allele,
                                   allele_col,
                                   ie_col, ie_filter,
@@ -237,7 +238,7 @@ def main():
 
     if (not rep_null_input) or (not conn_null_input):
         replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
-                                                              allele2distil_id, 
+                                                              allele2distil_id,
                                                               clean_controls,
                                                               num_iterations,
                                                               num_reps)
@@ -248,25 +249,25 @@ def main():
         connectivity_null_dist = conn_nulls_from_input
 
     # Print out percentiles of each null distribution
-    print "Replicate null percentiles"
-    print "2.5,5,10,50,90,95,97.5"
+    # print "Replicate null percentiles"
+    #print "2.5,5,10,50,90,95,97.5"
     rep_precentiles =  numpy.percentile(replicate_null_dist, [2.5,5,10,50,90,95,97.5])
     if not rep_null_input:
         rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
         for x in replicate_null_dist:
             rep_null_distribution_out.write("%f\n" % x)
         rep_null_distribution_out.close()
-    print rep_precentiles 
+    #print rep_precentiles
 
-    print "Connectivity null percentiles"
-    print "2.5,5,10,50,90,95,97.5"
+    #print "Connectivity null percentiles"
+    #print "2.5,5,10,50,90,95,97.5"
     conn_percentiles = numpy.percentile(connectivity_null_dist, [2.5,5,10,50,90,95,97.5])
     if not conn_null_input:
         conn_null_dist_out = open(options.output_file_prefix + "_conn_null.txt", "w")
         for x in connectivity_null_dist:
             conn_null_dist_out.write("%f\n" % x)
         conn_null_dist_out.close()
-    print conn_percentiles
+    #print conn_percentiles
 
     # WT null data
     # {WT_allele:{"wt_rep": med_wt_rep,
@@ -299,7 +300,7 @@ def main():
         mut_rankpt, mut_rankpt_dist = getSelfConnectivity(this_gctx,
                                                           allele2distil_id[allele],
                                                           num_reps)
-       
+
         self_pval = getPairwiseComparisons(mut_rankpt_dist,
                                            replicate_null_dist)
         mut_rep_pvals.append(self_pval)
@@ -307,14 +308,14 @@ def main():
         mut_wt_conn_rankpt, mut_wt_conn_dist = getConnectivity(this_gctx,
                                                                allele2distil_id[allele],
                                                                allele2distil_id[allele2WT[allele]],
-                                                               num_reps)                                                            
+                                                               num_reps)
 
         conn_pval = getPairwiseComparisons(mut_wt_conn_dist,
                                            connectivity_null_dist)
         mut_wt_conn_pvals.append(conn_pval)
 
         mut_wt_rep_pval = getPairwiseComparisons(mut_rankpt_dist,
-                                                 WT_dict[allele2WT[allele]]["wt_rep_dist"])                                   
+                                                 WT_dict[allele2WT[allele]]["wt_rep_dist"])
         mut_wt_rep_pvals.append(mut_wt_rep_pval)
 
 #        wt_mut_rep_dist = WT_dict[allele2WT[allele]]["wt_rep_dist"] + mut_rankpt_dist
@@ -323,7 +324,7 @@ def main():
         # to deterimine if the three categories are signficantly different.
 
 #        wt_mut_rep_vs_wt_mut_conn_pval = getPairwiseComparisons(wt_mut_rep_dist, mut_wt_conn_dist)
-        wt_mut_rep_vs_wt_mut_conn_pval = getKruskal(WT_dict[allele2WT[allele]]["wt_rep_dist"], 
+        wt_mut_rep_vs_wt_mut_conn_pval = getKruskal(WT_dict[allele2WT[allele]]["wt_rep_dist"],
                                                     mut_rankpt_dist,
                                                     mut_wt_conn_dist)
         mut_wt_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
@@ -348,8 +349,8 @@ def main():
     mut_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_rep_pvals), "BH")
     wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(wt_rep_pvals), "BH")
     mut_wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_pvals), "BH")
-    mut_wt_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_conn_pvals), "BH") 
-    mut_wt_rep_vs_wt_mut_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_vs_wt_mut_conn_pvals), "BH") 
+    mut_wt_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_conn_pvals), "BH")
+    mut_wt_rep_vs_wt_mut_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_vs_wt_mut_conn_pvals), "BH")
 
     # Write to file
     num_lines = len(outlines)
@@ -357,7 +358,7 @@ def main():
         this_outline = outlines[i]
 
         this_outline += "\t%f\t" % mut_rep_c_pvals[i]
-        
+
         # Getting wt c_pval
         this_outlist = outlines[i].split("\t")
         this_wt = this_outlist[WT_IDX]
@@ -368,7 +369,7 @@ def main():
         this_outline += "%f\t" % mut_wt_conn_c_pvals[i]
         this_outline += "%f\n" % mut_wt_rep_vs_wt_mut_conn_c_pvals[i]
 
-        output_file_prefix.write(this_outline)           
+        output_file_prefix.write(this_outline)
 
     # Print out distribution files
 
@@ -470,7 +471,7 @@ def buildWT_dict(this_gctx, allele2distil_id, WT_alleles, replicate_null_dist, n
     wt_allele_ordered = []
     for allele in WT_alleles:
         WT_dict[allele] = {}
-        wt_rep_rankpt, rep_rankpts = getSelfConnectivity(this_gctx, 
+        wt_rep_rankpt, rep_rankpts = getSelfConnectivity(this_gctx,
                                                         allele2distil_id[allele],
                                                         num_reps)
 
@@ -483,7 +484,7 @@ def buildWT_dict(this_gctx, allele2distil_id, WT_alleles, replicate_null_dist, n
         wt_allele_ordered.append(allele)
 
     return WT_dict, wt_rep_pvals, wt_allele_ordered
-        
+
 def formatDir(i_dir):
     i_dir = os.path.realpath(i_dir)
     if i_dir.endswith("/"):
@@ -503,9 +504,9 @@ def getKruskal(wt_rankpt_dist, mut_rankpt_dist, mut_wt_conn_dist):
 
 def getSelfConnectivity(this_gctx, distil_ids, num_reps):
     """
-    returns 
+    returns
     median rankpoint
-    Distribution of values 
+    Distribution of values
     """
     row_medians = []
     for i in range(num_reps):
@@ -519,14 +520,14 @@ def getSelfConnectivity(this_gctx, distil_ids, num_reps):
         row_medians.append(numpy.percentile(rank_pts, 50))
 
     return numpy.percentile(row_medians, 50), row_medians
-        
+
 
 #   rep_rankpts = []
 #   for i in range(num_reps):
 #       for j in range(i+1, num_reps):
 #           rep_rankpts.append(float(this_gctx.frame[distil_ids[i]]
 #                                                   [distil_ids[j]]))
-#   
+#
 #   return numpy.percentile(rep_rankpts, 50), rep_rankpts
 
 def getConnectivity(this_gctx, distil_ids1, distil_ids2, num_reps):
@@ -579,8 +580,8 @@ def getNullDist(this_gctx, allele2distil_id, controls,
                 num_iterations, num_reps):
     """
     Returns
-    replicate_null_dist, 
-    connectivity_null_dist 
+    replicate_null_dist,
+    connectivity_null_dist
     """
     rep_null_dist = []
     connectivity_null_dist = []
@@ -598,33 +599,33 @@ def getNullDist(this_gctx, allele2distil_id, controls,
         control_distil_ids_set = set([random.choice(allele2distil_id[random_control])])
         while len(control_distil_ids_set) < num_reps:
             this_control = random.choice(controls)
-            this_distil = random.choice(allele2distil_id[this_control])     
+            this_distil = random.choice(allele2distil_id[this_control])
             if this_distil in control_distil_ids_set:
                 continue
             control_distil_ids_set.add(this_distil)
-    
+
         control_distil_ids = list(control_distil_ids_set)
-        
+
         # Get replicate null
         # First version. control vs. pert. This approach seemed to not be the
         # best control.
 #       rep_null_dist.append(float(this_gctx.frame[random.choice(allele2distil_id[random_control])]
 #                                                 [random.choice(allele2distil_id[random_allele])]))
 
-        # Introspect similarity is median of row similarities 
+        # Introspect similarity is median of row similarities
         rank_pts = []
         for i in range(1, num_reps):
-            rank_pts.append(float(this_gctx.frame[control_distil_ids[0]][control_distil_ids[i]]))       
+            rank_pts.append(float(this_gctx.frame[control_distil_ids[0]][control_distil_ids[i]]))
 
 #       for i in range(num_reps):
-#           for j in range(i+1,num_reps): 
-#               rank_pts.append(float(this_gctx.frame[control_distil_ids[i]][control_distil_ids[j]]))       
- 
+#           for j in range(i+1,num_reps):
+#               rank_pts.append(float(this_gctx.frame[control_distil_ids[i]][control_distil_ids[j]]))
+
         rep_null_dist.append(numpy.percentile(rank_pts, 50))
 
 #        rep_null_dist.append(float(this_gctx.frame[control_distil_ids[0]]
 #                                                  [control_distil_ids[1]]))
-    
+
 
         # Get connectivity null
         rank_pts = []
@@ -636,20 +637,20 @@ def getNullDist(this_gctx, allele2distil_id, controls,
 #               rank_pts.append(float(this_gctx.frame[allele2distil_id[random_control][i]]
 #                                                    [allele2distil_id[random_allele][j]]))
 
-        connectivity_null_dist.append(numpy.percentile(rank_pts, 50)) 
+        connectivity_null_dist.append(numpy.percentile(rank_pts, 50))
 
         c += 1
 
     return rep_null_dist, connectivity_null_dist
-        
-          
+
+
 def hasLowIE(ie_string, ie_thresh):
     ie_elems = map(float, ie_string.split("|"))
     for ie in ie_elems:
         if ie < ie_thresh:
             return True
     return False
-    
+
 
 def parseRefTestFile(reference_test_filename):
 
@@ -701,7 +702,7 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
             cell_idx = lineList.index("cell_id")
 
             ie_cols = ie_col.split(",")
-            for ie_col in ie_cols: 
+            for ie_col in ie_cols:
                 ie_col_idxs.append(lineList.index(ie_col))
             continue
 
@@ -719,8 +720,8 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
                 if low_ie_flag:
                     break
             if low_ie_flag:
-                continue     
-    
+                continue
+
         x_mutation_status = lineList[allele_idx]
         gene = lineList[gene_idx]
 
@@ -732,8 +733,8 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
 
         for distil_id in distil_ids:
             updateDictOfLists(allele2distil_id, x_mutation_status, distil_id)
-    
-        updateDictOfSets(gene2alleles, gene, x_mutation_status) 
+
+        updateDictOfSets(gene2alleles, gene, x_mutation_status)
 
         allele2gene[x_mutation_status] = gene
         allele2cell_id[x_mutation_status] = lineList[cell_idx]
@@ -743,18 +744,18 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
     if ref2test_allele:
         WT_alleles = set(ref2test_allele.keys())
         WT_alleles = WT_alleles & passed_alleles
-       
+
         for ref in ref2test_allele:
             if ref not in passed_alleles:
                 continue
             for test in ref2test_allele[ref]:
                 if test not in passed_alleles:
                     continue
-                allele2WT[test] = ref         
+                allele2WT[test] = ref
     else: # Need to infer WT reference
         # Now find WT orf
         WT_alleles = set([])
-       
+
         for gene in gene2alleles:
             # Find WT allele
             this_WT = ""
@@ -799,7 +800,182 @@ def updateDictOfSets(d, key, item):
     except KeyError:
         d[key] = set([item])
 
+def formatDir(i_dir):
+    i_dir = os.path.realpath(i_dir)
+    if i_dir.endswith("/"):
+        i_dir = i_dir.rstrip("/")
+    return i_dir
+
+def formatLine(line):
+    line = line.replace("\r","")
+    line = line.replace("\n","")
+    return line
+
+#eVIPpredictfunctions
+
+def get_prediction_1(wt_rep, mut_rep, mut_wt_conn, r_rank, c_rank):
+    """
+    WT and mut replicate robustness compared using a user-specified rankpoint
+    threshold
+
+    Also, mut-wt connectivity is compared when WT and mut are robust
+    """
+    if wt_rep < r_rank and mut_rep < r_rank:
+        return "NI"
+
+    if wt_rep >= r_rank and mut_rep < r_rank:
+        return "LOF"
+
+    if wt_rep >= r_rank and mut_rep >= r_rank and mut_wt_conn >= c_rank:
+        return "Inert"
+
+    if wt_rep < r_rank and mut_rep >= r_rank:
+        return "GOF"
+
+    if wt_rep >= r_rank and mut_rep >= r_rank and mut_wt_conn < c_rank:
+        return "GOF"
+
+def get_prediction_2(wt_rep_null_pval, mut_rep_null_pval, mut_wt_conn_null_pval,
+                     mut_wt_conn, r_thresh, c_thresh):
+    """
+    Similar to prediction 1, but using p-value against a null, instead of
+    rankpoint thresholds
+    """
+
+    if wt_rep_null_pval >= r_thresh and mut_rep_null_pval >= r_thresh:
+        return "NI"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval >= r_thresh:
+        return "LOF"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval < r_thresh and mut_wt_conn_null_pval < c_thresh:
+        if mut_wt_conn >= 0:
+            return "Inert"
+        else:
+            return "GOF"
+
+    if wt_rep_null_pval >= r_thresh and mut_rep_null_pval < r_thresh:
+        return "GOF"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval < r_thresh and mut_wt_conn_null_pval >= c_thresh:
+        return "GOF"
+
+def get_prediction_3(wt_rep, mut_rep, mut_wt_rep_pval, mut_wt_conn, mut_wt_conn_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh):
+    """
+    Instead of checking against a null, a difference in the robustness is used
+    """
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if mut_wt_conn_pval < c_thresh:
+        if mut_wt_conn > 0:
+            return "Inert"
+        else:
+            return "GOF"
+    else:
+        return "NI"
+
+def get_prediction_4(wt_rep, mut_rep, mut_wt_rep_pval,
+                     mut_wt_conn, mut_wt_conn_pval, disting_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
+
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if mut_wt_conn_pval < c_thresh:
+        if mut_wt_conn >= 0:
+            if disting_pval < disting_thresh:
+                return "COF"
+            else:
+                return "Inert"
+        else:
+            return "GOF"
+    else:
+        return "NI"
+
+def get_prediction_5(wt_rep, mut_rep, mut_wt_rep_pval,
+                     mut_wt_conn, mut_wt_conn_pval, disting_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
+
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if disting_pval < disting_thresh:
+        return "COF"
+
+    if mut_wt_conn_pval < c_thresh:
+        return "Inert"
+
+    return "NI"
+
+def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
+                     mut_wt_conn, mut_wt_conn_pval, disting_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh,
+                     conn_null_med):
+
+    if disting_pval < disting_thresh:
+        if max_diff(wt_rep, mut_rep, mut_wt_conn) < mut_wt_rep_diff:
+            if mut_wt_conn_pval < c_thresh:
+                return "Neutral"
+            else:
+                return "Error"
+
+#       if mut_wt_conn_pval < c_thresh:
+#           if mut_wt_conn < conn_null_med:
+#               return "DOM-NEG"
+
+        if mut_wt_rep_pval < mut_wt_thresh:
+            if wt_rep < mut_rep:
+                if mut_rep - wt_rep >= mut_wt_rep_diff:
+                    return "GOF"
+                else:
+                    return "COF"
+            elif wt_rep > mut_rep:
+                if wt_rep - mut_rep >= mut_wt_rep_diff:
+                    return "LOF"
+                else:
+                    return "COF"
+            else:
+                return "COF"
+        else:
+            return "COF"
+
+    if mut_wt_conn_pval < c_thresh:
+        return "Neutral"
+
+    return "NI"
+
+def max_diff(wt_rep, mut_rep, mut_wt_conn):
+    max_diff = abs(wt_rep - mut_rep)
+
+    wt_conn_diff = abs(wt_rep - mut_wt_conn)
+    if wt_conn_diff > max_diff:
+        max_diff = wt_conn_diff
+
+    mut_conn_diff = abs(mut_rep - mut_wt_conn)
+    if mut_conn_diff > max_diff:
+        max_diff = mut_conn_diff
+
+    return max_diff
+
+
 #################
-# END FUNCTIONS #	
-#################	
+# END FUNCTIONS #
+#################
 if __name__ == "__main__": main()
