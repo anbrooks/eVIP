@@ -42,6 +42,11 @@ WT_IDX = 5
 DEF_IE_COL = "x_ie_a549"
 DEF_ALLELE_COL = "x_mutation_status"
 
+CONN_THRESH = 0.05
+MUT_WT_REP_THRESH = 0.05
+DISTING_THRESH = 0.05
+DIFF_WT_MT_RANK = 5.0
+
 #################
 # END CONSTANTS #
 #################
@@ -156,7 +161,7 @@ def main():
                           type="float",
                           help="""Threshold for infection efficiency. Any wildtype
                                   or mutant alleles having an ie below this
-                                  threshold, will be removed""",
+                                  threshold, will be removed. DEF=%d""" % IE_FILTER,
                           default=IE_FILTER)
     opt_parser.add_option("--num_reps",
                           dest="num_reps",
@@ -168,7 +173,7 @@ def main():
                           dest="cell_id",
                           type="string",
                           help="""Optional: Will only look at signatures from this cell
-                                  line. Helps to filter sig_info file.""",
+                                  line. Helps to filter sig_info file. DEF=%s""",
                           default=None)
     opt_parser.add_option("--plate_id",
                           dest="plate_id",
@@ -176,6 +181,38 @@ def main():
                           help="""Optional: Will only look at signatures from
                                   this plate.""",
                           default=None)
+
+    #prediction options
+
+    opt_parser.add_option("--use_c_pval",
+                          dest="use_c_pval",
+                          action="store_true",
+                          help="Will use corrected p-value instead of raw p-val",
+                          default=False)
+    opt_parser.add_option("--conn_thresh",
+                          dest="conn_thresh",
+                          type="float",
+                          help="P-value threshould for connectivity vs null. DEF=%d" % CONN_THRESH,
+                          default=CONN_THRESH)
+    opt_parser.add_option("--mut_wt_rep_thresh",
+                          dest="mut_wt_thresh",
+                          type="float",
+                          help="""P-value threshould for comparison of WT and mut
+                                  robustness DEF=%d""" % MUT_WT_REP_THRESH,
+                          default=MUT_WT_REP_THRESH)
+    opt_parser.add_option("--mut_wt_rep_rank_diff",
+                          dest="mut_wt_rep_diff",
+                          type="float",
+                          help="""The minimum difference in median rankpoint
+                                  between WT and mut to consider a difference.
+                                  DEF=%d""" % DIFF_WT_MT_RANK,
+                          default=DIFF_WT_MT_RANK)
+    opt_parser.add_option("--disting_thresh",
+                          dest="disting_thresh",
+                          type="float",
+                          help="""P-value threshould that tests if mut and wt reps
+                                  are indistinguishable from each other. DEF=%d""" % DISTING_THRESH,
+                          default=DISTING_THRESH)
 
     (options, args) = opt_parser.parse_args()
 
@@ -212,6 +249,16 @@ def main():
 
 #    rep_null_input = options.rep_null_input
     conn_null_input = options.conn_null_input
+
+
+#predictions
+    use_c_pval = options.use_c_pval
+    c_thresh = options.conn_thresh
+    mut_wt_thresh = options.mut_wt_thresh
+    mut_wt_rep_diff = options.mut_wt_rep_diff
+    disting_thresh = options.disting_thresh
+
+
 
 #    if rep_null_input:
 #        rep_nulls_from_input_str = grp.read_grp(rep_null_input)
@@ -278,9 +325,11 @@ def main():
 
     # Print header to output file
     output_file_prefix.write("gene\tmut\tmut_rep\twt_rep\tmut_wt_connectivity\t")
-    output_file_prefix.write("wt\tcell_line\t")
-    output_file_prefix.write("mut_wt_rep_pval\tmut_wt_conn_null_pval\twt_mut_rep_vs_wt_mut_conn_pval\t")
-    output_file_prefix.write("mut_wt_rep_c_pval\tmut_wt_conn_null_c_pval\twt_mut_rep_vs_wt_mut_conn_c_pval\n")
+    output_file_prefix.write("wt\tcell_line\tmut_wt_rep_pval\tmut_wt_conn_null_pval\t")
+    output_file_prefix.write("wt_mut_rep_vs_wt_mut_conn_pval\tmut_wt_rep_c_pval\t")
+    output_file_prefix.write("mut_wt_conn_null_c_pval\twt_mut_rep_vs_wt_mut_conn_c_pval\t")
+    output_file_prefix.write("prediction\n")
+
 
     mut_rep_pvals = []
     mut_wt_rep_pvals = []
