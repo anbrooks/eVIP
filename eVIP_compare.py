@@ -45,7 +45,7 @@ DEF_ALLELE_COL = "x_mutation_status"
 CONN_THRESH = 0.05
 MUT_WT_REP_THRESH = 0.05
 DISTING_THRESH = 0.05
-DIFF_WT_MT_RANK = 0
+DIFF_WT_MT_RANK = 5.0
 
 #################
 # END CONSTANTS #
@@ -860,6 +860,117 @@ def formatLine(line):
     return line
 
 #eVIPpredictfunctions
+
+def get_prediction_1(wt_rep, mut_rep, mut_wt_conn, r_rank, c_rank):
+    """
+    WT and mut replicate robustness compared using a user-specified rankpoint
+    threshold
+
+    Also, mut-wt connectivity is compared when WT and mut are robust
+    """
+    if wt_rep < r_rank and mut_rep < r_rank:
+        return "NI"
+
+    if wt_rep >= r_rank and mut_rep < r_rank:
+        return "LOF"
+
+    if wt_rep >= r_rank and mut_rep >= r_rank and mut_wt_conn >= c_rank:
+        return "Inert"
+
+    if wt_rep < r_rank and mut_rep >= r_rank:
+        return "GOF"
+
+    if wt_rep >= r_rank and mut_rep >= r_rank and mut_wt_conn < c_rank:
+        return "GOF"
+
+def get_prediction_2(wt_rep_null_pval, mut_rep_null_pval, mut_wt_conn_null_pval,
+                     mut_wt_conn, r_thresh, c_thresh):
+    """
+    Similar to prediction 1, but using p-value against a null, instead of
+    rankpoint thresholds
+    """
+
+    if wt_rep_null_pval >= r_thresh and mut_rep_null_pval >= r_thresh:
+        return "NI"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval >= r_thresh:
+        return "LOF"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval < r_thresh and mut_wt_conn_null_pval < c_thresh:
+        if mut_wt_conn >= 0:
+            return "Inert"
+        else:
+            return "GOF"
+
+    if wt_rep_null_pval >= r_thresh and mut_rep_null_pval < r_thresh:
+        return "GOF"
+
+    if wt_rep_null_pval < r_thresh and mut_rep_null_pval < r_thresh and mut_wt_conn_null_pval >= c_thresh:
+        return "GOF"
+
+def get_prediction_3(wt_rep, mut_rep, mut_wt_rep_pval, mut_wt_conn, mut_wt_conn_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh):
+    """
+    Instead of checking against a null, a difference in the robustness is used
+    """
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if mut_wt_conn_pval < c_thresh:
+        if mut_wt_conn > 0:
+            return "Inert"
+        else:
+            return "GOF"
+    else:
+        return "NI"
+
+def get_prediction_4(wt_rep, mut_rep, mut_wt_rep_pval,
+                     mut_wt_conn, mut_wt_conn_pval, disting_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
+
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if mut_wt_conn_pval < c_thresh:
+        if mut_wt_conn >= 0:
+            if disting_pval < disting_thresh:
+                return "COF"
+            else:
+                return "Inert"
+        else:
+            return "GOF"
+    else:
+        return "NI"
+
+def get_prediction_5(wt_rep, mut_rep, mut_wt_rep_pval,
+                     mut_wt_conn, mut_wt_conn_pval, disting_pval,
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
+
+    if mut_wt_rep_pval < mut_wt_thresh:
+        if wt_rep < mut_rep:
+            if mut_rep - wt_rep >= mut_wt_rep_diff:
+                return "GOF"
+        elif wt_rep > mut_rep:
+            if wt_rep - mut_rep >= mut_wt_rep_diff:
+                return "LOF"
+
+    if disting_pval < disting_thresh:
+        return "COF"
+
+    if mut_wt_conn_pval < c_thresh:
+        return "Inert"
+
+    return "NI"
 
 def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
                      mut_wt_conn, mut_wt_conn_pval, disting_pval,
