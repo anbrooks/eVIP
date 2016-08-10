@@ -133,12 +133,12 @@ def main():
                           type="int",
                           help="Number of iterations to run. DEF=%d" % NUM_ITERATIONS,
                           default=NUM_ITERATIONS)
-    opt_parser.add_option("--rep_null",
-                          dest="rep_null_input",
-                          type="string",
-                          help="""Optional file containing rep null values from a previous
-                                  run. Should end in _rep_null.txt""",
-                          default=None)
+#    opt_parser.add_option("--rep_null",
+#                          dest="rep_null_input",
+#                          type="string",
+#                          help="""Optional file containing rep null values from a previous
+#                                  run. Should end in _rep_null.txt""",
+#                          default=None)
     opt_parser.add_option("--conn_null",
                           dest="conn_null_input",
                           type="string",
@@ -210,12 +210,12 @@ def main():
     ie_col = options.ie_col
     ie_filter = options.ie_filter
 
-    rep_null_input = options.rep_null_input
+#    rep_null_input = options.rep_null_input
     conn_null_input = options.conn_null_input
 
-    if rep_null_input:
-        rep_nulls_from_input_str = grp.read_grp(rep_null_input)
-        rep_nulls_from_input = map(float, rep_nulls_from_input_str)
+#    if rep_null_input:
+#        rep_nulls_from_input_str = grp.read_grp(rep_null_input)
+#        rep_nulls_from_input = map(float, rep_nulls_from_input_str)
     if conn_null_input:
         conn_nulls_from_input_str = grp.read_grp(conn_null_input)
         conn_nulls_from_input = map(float, conn_nulls_from_input_str)
@@ -236,15 +236,15 @@ def main():
         if this_control in allele2distil_id:
             clean_controls.append(this_control)
 
-    if (not rep_null_input) or (not conn_null_input):
-        replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
+#    if (not rep_null_input) or (not conn_null_input):
+    replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
                                                               allele2distil_id,
                                                               clean_controls,
                                                               num_iterations,
                                                               num_reps)
 
-    if rep_null_input:
-        replicate_null_dist = rep_nulls_from_input
+#    if rep_null_input:
+#        replicate_null_dist = rep_nulls_from_input
     if conn_null_input:
         connectivity_null_dist = conn_nulls_from_input
 
@@ -252,11 +252,11 @@ def main():
     # print "Replicate null percentiles"
     #print "2.5,5,10,50,90,95,97.5"
     rep_precentiles =  numpy.percentile(replicate_null_dist, [2.5,5,10,50,90,95,97.5])
-    if not rep_null_input:
-        rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
-        for x in replicate_null_dist:
-            rep_null_distribution_out.write("%f\n" % x)
-        rep_null_distribution_out.close()
+    #if not rep_null_input:
+    rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
+    for x in replicate_null_dist:
+        rep_null_distribution_out.write("%f\n" % x)
+    rep_null_distribution_out.close()
     #print rep_precentiles
 
     #print "Connectivity null percentiles"
@@ -278,9 +278,8 @@ def main():
 
     # Print header to output file
     output_file_prefix.write("gene\tmut\tmut_rep\twt_rep\tmut_wt_connectivity\t")
-    output_file_prefix.write("wt\tcell_line\tmut_rep_null_pval\twt_rep_null_pval\t")
+    output_file_prefix.write("wt\tcell_line\t")
     output_file_prefix.write("mut_wt_rep_pval\tmut_wt_conn_null_pval\twt_mut_rep_vs_wt_mut_conn_pval\t")
-    output_file_prefix.write("mut_rep_null_c_pval\twt_rep_null_c_pval\t")
     output_file_prefix.write("mut_wt_rep_c_pval\tmut_wt_conn_null_c_pval\twt_mut_rep_vs_wt_mut_conn_c_pval\n")
 
     mut_rep_pvals = []
@@ -336,8 +335,8 @@ def main():
                      "%f" % mut_wt_conn_rankpt,
                      allele2WT[allele],
                      allele2cell_id[allele],
-                     "%f" % self_pval,
-                     "%f" % WT_dict[allele2WT[allele]]["wt_rep_pval"],
+    #                 "%f" % self_pval,
+    #                 "%f" % WT_dict[allele2WT[allele]]["wt_rep_pval"],
                      "%f" % mut_wt_rep_pval,
                      "%f" % conn_pval,
                      "%f" % wt_mut_rep_vs_wt_mut_conn_pval]
@@ -357,15 +356,15 @@ def main():
     for i in range(num_lines):
         this_outline = outlines[i]
 
-        this_outline += "\t%f\t" % mut_rep_c_pvals[i]
+    #    this_outline += "\t%f\t" % mut_rep_c_pvals[i]
 
         # Getting wt c_pval
         this_outlist = outlines[i].split("\t")
         this_wt = this_outlist[WT_IDX]
         wt_idx = wt_ordered.index(this_wt)
-        this_outline += "%f\t" % wt_rep_c_pvals[wt_idx]
+    #    this_outline += "%f\t" % wt_rep_c_pvals[wt_idx]
 
-        this_outline += "%f\t" % mut_wt_rep_c_pvals[i]
+        this_outline += "\t%f\t" % mut_wt_rep_c_pvals[i]
         this_outline += "%f\t" % mut_wt_conn_c_pvals[i]
         this_outline += "%f\n" % mut_wt_rep_vs_wt_mut_conn_c_pvals[i]
 
