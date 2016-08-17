@@ -6,6 +6,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import csv
 from scipy import stats
+import cmap.io.gct as gct
+import cmap.io.plategrp as grp
+import gp
+
 
 ###########
 # CLASSES #
@@ -21,10 +25,10 @@ class OptionParser(optparse.OptionParser):
         option = self.get_option(opt)
 
         # Assumes the option's 'default' is set to None!
-        if getattr(self.values, option.dest) is None:
-            print ("%s option not supplied") % option
-            self.print_help()
-            sys.exit(1)
+    #    if getattr(self.values, option.dest) is None:
+    #        print ("%s option not supplied") % option
+    #        self.print_help()
+    #        sys.exit(1)
 
 ###############
 # END CLASSES #
@@ -44,30 +48,66 @@ def main():
                           help="""file with filtered and normalized gene expression data table""",
                           default=None)
 
-    opt_parser.add_option("--output",
-                          dest="output",
-                          type="string",
-                          help="""name of output file """,
-                          default=None)
+    # opt_parser.add_option("--output",
+    #                       dest="output",
+    #                       type="string",
+    #                       help="""name of output file """,
+    #                       default=None)
 
 
     (options, args) = opt_parser.parse_args()
 
-
-
-
     #validate command line arguments
-    opt_parser.check_required("exp_table")
-    opt_parser.check_required("output")
+    #opt_parser.check_required("exp_table")
+    #opt_parser.check_required("output")
 
-    exp_table_file = open(options.exp_table)
-    output_file = open(options.output + ".csv","w")
+    #exp_table_file= open(options.exp_table)
+    #output_file = open(options.output + ".gct","w")
+
+    #turning expression table into matrix
+    #matrix = np.loadtxt(open("test.csv","rb"),delimiter=",",skiprows=1, usecols=[])
+
+
+
+
+    matrix = np.loadtxt(open("test.csv","rb"),delimiter=",",skiprows=1, usecols=[1,2,3,4])
+
+
+
+
+    expmatrix_to_zscore(matrix)
+
+    print(matrix.shape)
+    print(matrix)
+
+    #exp_table.close()
+    sys.exit(0)
+
+
+
 
 ############
 # END_MAIN #
 ############
 
-matrix = np.loadtxt(open("test.csv","rb"),delimiter=",",skiprows=1, usecols=[1,2,3,4])
-print(matrix)
+#############
+# FUNCTIONS #
+#############
+def expmatrix_to_zscore(matrix):
+    print(matrix)
+    #getting zscore matrix
+    zscore_mat = stats.zscore(matrix)
+    print(zscore_mat)
 
-print(stats.zscore(matrix))
+    #spearman rank pairwise correlatin
+    spearm_mat = stats.spearmanr(zscore_mat)
+    print(spearm_mat)
+
+def create_gct(output):
+    
+
+
+#################
+# END FUNCTIONS #
+#################
+if __name__ == "__main__": main()
