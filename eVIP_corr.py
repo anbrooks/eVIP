@@ -2,9 +2,13 @@ import sys
 import optparse
 import os
 import pdb
-
+import numpy as np
+from scipy import stats
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
+
+
+CLOSE_TO_ZERO = 0.0001
 
 ###########
 # CLASSES #
@@ -46,51 +50,66 @@ def main():
                           type="string",
                           help="""name of output file containing z_scores""",
                           default=None)
-    opt_parser.add_option("--sp_out",
-                          dest="sp_output",
-                          type="string",
-                          help="""name of output file containing spearman correlation""",
-                          default=None)
+    # opt_parser.add_option("--sp_out",
+    #                       dest="sp_output",
+    #                       type="string",
+    #                       help="""name of output file containing spearman correlation""",
+    #                       default=None)
 
     (options, args) = opt_parser.parse_args()
     opt_parser.check_required("-i")
     opt_parser.check_required("--z_out")
-    opt_parser.check_required("--sp_out")
+    # opt_parser.check_required("--sp_out")
 
     input_file = open(options.input)
-    z_output_file = open(options.z_output, "w")
-    spearman_output = open(options.sp_output, "w")
+    # spearman_output = open(options.sp_output, "w")
+    z_output_file = open(options.z_output, "w+")
+
 
     outlines = []
     mads = []
+    #zscores = []
+    out_vals =[]
+    in_vals =[]
+    vals=[]
+    t_vals=[]
 
     header = None
     for line in input_file:
         line = formatLine(line)
-
         if line.startswith("#"):
             header = line
             z_output_file.write(header + "\n")
             continue
 
-        lineList = line.split("\t")
+        lineList = line.split()
 
-        in_vals =[]
-        vals=[]
         for item in lineList[1:]:
             val = float(item)
             in_vals.append(val)
             vals.append(val)
-
+            #print(vals)
 
         median = robjects.r['mean'](robjects.FloatVector(vals))[0]
         mad = robjects.r['sd'](robjects.FloatVector(vals))[0]
 
-        out_vals =[]
+
 
         for v in in_vals:
-            new_val = (v-median)/mad
-            out_vals.append(new_val)
+            print("median")
+            print(median)
+            print("sd")
+            print(mad)
+            if mad == 0:
+                new_val = (v-median)/CLOSE_TO_ZERO
+                t_vals.append(new_val)
+                out_vals.append(new_val)
+            else:
+                new_val = (v-median)/mad
+                t_vals.append(new_val)
+                out_vals.append(new_val)
+            print("newval")
+            print(new_val)
 
         out_vals_str = []
         for v in out_vals:
@@ -100,15 +119,25 @@ def main():
         outline += "\t".join(out_vals_str)
         outline += "\n"
 
+
         outlines.append(outline)
+        #print(outlines)
         mads.append(mad)
 
     for outline in outlines:
         z_output_file.write(outline)
+        #zscores.append(outline)
+
+    #print(lineList)
+    #print(lineList[1:])
+
+
 
     input_file.close()
     z_output_file.close()
-    spearman_output.close()
+    #spearman_output.close()
+    sys.exit(0)
+
 
 #############
 # FUNCTIONS #
