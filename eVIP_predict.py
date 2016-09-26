@@ -21,7 +21,6 @@ import numpy
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 import csv
 
 #############
@@ -33,6 +32,7 @@ LOG10_ZERO = 35.0
 WT_IDX = 5
 DEF_IE_COL = "x_ie_a549"
 DEF_ALLELE_COL = "x_mutation_status"
+DEF_IE_FILTER = 0
 
 #predict
 CONN_THRESH = 0.05
@@ -141,7 +141,7 @@ def main():
                           help="""Threshold for infection efficiency. Any wildtype
                                   or mutant alleles having an ie below this
                                   threshold, will be removed""",
-                          default=None)
+                          default=DEF_IE_FILTER)
     opt_parser.add_option("--num_reps",
                           dest="num_reps",
                           type="int",
@@ -198,6 +198,7 @@ def main():
                       default=None)
 
     (options, args) = opt_parser.parse_args()
+
     #validate the command line arguments
     opt_parser.check_required("--sig_info")
     opt_parser.check_required("--gctx")
@@ -208,8 +209,6 @@ def main():
     opt_parser.check_required("--disting_thresh")
 
     sig_info_file = open(options.sig_info)
-    #output_file_prefix = open(options.output_file_prefix + ".txt", "w")
-    #or?
     output = open(options.output_table, "w")
 
 
@@ -398,20 +397,6 @@ def main():
 
             predictions.append(prediction)
 
-            print(float(WT_dict[allele2WT[allele]]["wt_rep"]))
-            print(float(mut_rankpt))
-            print(float(mut_wt_rep_pval))
-            print(float(mut_wt_conn_rankpt))
-            print(float(conn_pval))
-            print(float(wt_mut_rep_vs_wt_mut_conn_pval))
-            print(mut_wt_thresh)
-            print(mut_wt_rep_diff)
-            print(c_thresh)
-            print(disting_thresh)
-            print(conn_null_med)
-            print(prediction)
-
-
 
     # Write to file
     #how many outlines?
@@ -420,8 +405,6 @@ def main():
     #for each outline
     for i in range(num_lines):
         this_outline = outlines[i]
-        count += 1
-        print(count)
         # Getting wt c_pval
         this_outlist = outlines[i].split("\t")
         this_wt = this_outlist[WT_IDX]
@@ -433,8 +416,6 @@ def main():
         this_outline += "%s\t" % predictions[i]
         this_outline += "\n"
 
-        print(this_outline)
-        print(predictions)
         output.write(this_outline)
 
 
