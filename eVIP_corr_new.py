@@ -1,11 +1,17 @@
 import sys
 import optparse
+import os
+import pdb
 import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import csv
 from scipy import stats
-import pandas as pd
+import rpy2.robjects as robjects
+from rpy2.robjects.packages import importr
+
+#############
+# CONSTANTS #
+#############
+
+CLOSE_TO_ZERO = 0.0001
 
 ###########
 # CLASSES #
@@ -21,9 +27,10 @@ class OptionParser(optparse.OptionParser):
 
         # Assumes the option's 'default' is set to None!
         if getattr(self.values, option.dest) is None:
-            print ("%s option not supplied") % option
+            print "%s option not supplied" % option
             self.print_help()
             sys.exit(1)
+
 ###############
 # END CLASSES #
 ###############
@@ -39,84 +46,98 @@ def main():
     opt_parser.add_option("-i",
                           dest="input",
                           type="string",
-                          help="""file with filtered and normalized gene expression data table""",
+                          help="""input txt file with filtered gene expression data""",
                           default=None)
     opt_parser.add_option("--z_out",
-                          dest="zscore_output",
+                          dest="z_output",
                           type="string",
-                          help="""name of zscore output file """,
+                          help="""name of output file containing z_scores""",
                           default=None)
     opt_parser.add_option("--sp_out",
-                          dest="spearman_output",
+                          dest="sp_output",
                           type="string",
-                          help="""name of spearman output file """,
+                          help="""name of output file containing spearman correlation""",
                           default=None)
 
     (options, args) = opt_parser.parse_args()
-
-    #validate command line arguments
     opt_parser.check_required("-i")
     opt_parser.check_required("--z_out")
     opt_parser.check_required("--sp_out")
 
+    input_file = open(options.input, "r")
+    z_output= open(options.z_output, "w+")
+    sp_output = open(options.sp_output, "w")
 
-    input_file = open(options.input)
-    z_output_file = open(options.zscore_output + ".csv","w")
-    sp_output_file = open(options.spearman_output + ".csv","w")
+    t_vals=[]
+    z_outline = []
+    z_outlines = []
 
-    #counts # of columns in input file, used for making matrix
-    ncols = len(input_file.readline().split(","))
+    header = None
+    for line in input_file:
+        line = formatLine(line)
+        if line.startswith("#"):
+            header = line
+            header += "\n"
+            z_output.write(header)
+            sp_output.write(header)
+            continue
+        lineList = line.split("\t")
 
-    #TODO define header
-    #TODO define genenames
+        vals = []
+        in_vals =[]
+        for item in lineList[1:]:
+            val = float(item)
+            in_vals.append(val)
+            vals.append(val)
 
-    matrix = np.loadtxt(input_file, delimiter=",",skiprows=0, usecols=range(1,ncols))
+        median = robjects.r['mean'](robjects.FloatVector(vals))[0]
+        mad = robjects.r['sd'](robjects.FloatVector(vals))[0]
+        z_vals = []
+        t_vals = []
 
-    # matrix_file = open('/Users/Alexis/Desktop/matrix.csv', 'w')
-    # writer = csv.writer(matrix_file)
-    #TODO
-    #writer.writerow(header)
-    #TODO add genenames
+        for v in in_vals:
+            if mad == 0:
+                z_val = (v - median) / CLOSE_TO_ZERO
+            else:
+                z_val = (v - median) / mad
 
-    # for values in matrix:
-    #     writer.writerow(values)
+            z_vals.append(z_val)
+            t_vals.append(z_val)
 
-    # z_calc = stats.zscore(matrix)
-    # z_writer = csv.writer(z_output_file)
-    # #z_writer.writerow(header)
-    # for z_values in z_calc:
-    #     z_writer.writerow(z_values)
+        z_vals_str = []
+        for v in t_vals:
+            z_vals_str.append("%.4f" % v)
 
-    z_writer = csv.writer(z_output_file)
-    sp_writer = csv.writer(sp_output_file)
-
-    z_lines = []
-    sp_lines = []
-    for line in matrix:
-        z_line = stats.zscore(line)
-        z_lines.append(z_line)
-        z_writer.writerow(z_line)
-    for z_line in z_lines:
-        #sp_line = stats.spearmanr(z_line)
-        sp_line = pd.corr(method='spearman')
-        sp_lines.append(sp_line)
-        sp_writer.writerow(sp_line)
+        z_outline = "\t".join(lineList[:1]) + "\t"
+        z_outline += "\t".join(z_vals_str)
+        z_outline += "\n"
 
 
+        z_outlines.append(z_outline)
+
+
+    for outline in z_outlines:
+        z_output.write(outline + "\n")
+
+        t_vals = []
 
     input_file.close()
-    z_output_file.close()
-    sp_output_file.close()
+    z_output.close()
+    sp_output.close()
+    sys.exit(0)
+
+
 #############
 # FUNCTIONS #
 #############
 
+def formatLine(line):
+    line = line.replace("\r","")
+    line = line.replace("\n","")
+    return line
+
 #################
 # END FUNCTIONS #
 #################
-
-############
-# END_MAIN #
-############
 if __name__ == "__main__":
     main()
