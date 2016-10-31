@@ -1,12 +1,13 @@
 import sys
 import optparse
-import os
-import pdb
 import numpy as np
 from scipy import stats
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 
+#############
+# CONSTANTS #
+#############
 
 CLOSE_TO_ZERO = 0.0001
 
@@ -50,92 +51,110 @@ def main():
                           type="string",
                           help="""name of output file containing z_scores""",
                           default=None)
-    # opt_parser.add_option("--sp_out",
-    #                       dest="sp_output",
-    #                       type="string",
-    #                       help="""name of output file containing spearman correlation""",
-    #                       default=None)
+    opt_parser.add_option("--sp_out",
+                          dest="sp_output",
+                          type="string",
+                          help="""name of output file containing spearman correlation""",
+                          default=None)
 
     (options, args) = opt_parser.parse_args()
     opt_parser.check_required("-i")
     opt_parser.check_required("--z_out")
-    # opt_parser.check_required("--sp_out")
+    opt_parser.check_required("--sp_out")
 
-    input_file = open(options.input)
-    # spearman_output = open(options.sp_output, "w")
-    z_output_file = open(options.z_output, "w+")
+    input_file = open(options.input, "r")
+    z_output= open(options.z_output+".txt", "w+")
+    sp_output = open(options.sp_output+".txt", "w")
 
-
-    outlines = []
-    mads = []
-    #zscores = []
-    out_vals =[]
-    in_vals =[]
-    vals=[]
     t_vals=[]
+    z_outline = []
+    z_outlines = []
+
+    sp_output.writelines("#1.3"+"\n")
+
+
+
 
     header = None
     for line in input_file:
         line = formatLine(line)
+        ncols = (str(len(line.split())))
         if line.startswith("#"):
             header = line
-            z_output_file.write(header + "\n")
+            header += "\n"
+            ncol_vals = int(ncols)-1
+            print ncol_vals
+            sp_output.write(str(ncol_vals)+"\t"+str(ncol_vals)+"\n")
+            z_output.write(header)
+            sp_output.write(header)
             continue
+        lineList = line.split("\t")
 
-        lineList = line.split()
-
+        vals = []
+        in_vals =[]
         for item in lineList[1:]:
             val = float(item)
             in_vals.append(val)
             vals.append(val)
-            #print(vals)
 
         median = robjects.r['mean'](robjects.FloatVector(vals))[0]
         mad = robjects.r['sd'](robjects.FloatVector(vals))[0]
-
-
+        z_vals = []
+        t_vals = []
 
         for v in in_vals:
-            print("median")
-            print(median)
-            print("sd")
-            print(mad)
             if mad == 0:
-                new_val = (v-median)/CLOSE_TO_ZERO
-                t_vals.append(new_val)
-                out_vals.append(new_val)
+                z_val = (v - median) / CLOSE_TO_ZERO
             else:
-                new_val = (v-median)/mad
-                t_vals.append(new_val)
-                out_vals.append(new_val)
-            print("newval")
-            print(new_val)
+                z_val = (v - median) / mad
 
-        out_vals_str = []
-        for v in out_vals:
-            out_vals_str.append("%.4f" % v)
+            z_vals.append(z_val)
+            t_vals.append(z_val)
 
-        outline = "\t".join(lineList[:1]) + "\t"
-        outline += "\t".join(out_vals_str)
-        outline += "\n"
+        z_vals_str = []
+        for v in t_vals:
+            z_vals_str.append("%.4f" % v)
+
+        z_outline = "\t".join(lineList[:1]) + "\t"
+        z_outline += "\t".join(z_vals_str)
+        z_outline += "\n"
+
+        z_outlines.append(z_outline)
 
 
-        outlines.append(outline)
-        #print(outlines)
-        mads.append(mad)
-
-    for outline in outlines:
-        z_output_file.write(outline)
-        #zscores.append(outline)
-
-    #print(lineList)
-    #print(lineList[1:])
-
+    for outline in z_outlines:
+        z_output.write(outline + "\n")
 
 
     input_file.close()
-    z_output_file.close()
-    #spearman_output.close()
+
+
+    #importing data as a matrix
+    def strip_first_col(fname, delimiter=None):
+        with open(fname, 'r') as fin:
+            for line in fin:
+                try:
+                    yield line.split(delimiter, 1)[1]
+                except IndexError:
+                    continue
+
+    data = np.loadtxt(strip_first_col(options.input), skiprows=1)
+
+    sp_matrix = (stats.spearmanr(data))
+
+
+    n=1
+    for line in sp_matrix[0]:
+        sp_line = np.ndarray.tolist(line)
+        header_list = header.split("\t")
+        sp_line.insert(0,header_list[n])
+        for i in sp_line:
+            sp_output.write(str(i).replace("\n", "") + "\t")
+        sp_output.write("\n")
+        n = n + 1
+
+    z_output.close()
+    sp_output.close()
     sys.exit(0)
 
 
@@ -147,6 +166,7 @@ def formatLine(line):
     line = line.replace("\r","")
     line = line.replace("\n","")
     return line
+
 
 #################
 # END FUNCTIONS #
