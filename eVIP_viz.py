@@ -1,5 +1,5 @@
 #!/broad/software/free/Linux/redhat_5_x86_64/pkgs/python_2.5.4/bin/python
-# mutation_impact_viz.py 
+# mutation_impact_viz.py
 # Author: Angela Brooks
 # Program Completion Date:
 # Description:
@@ -9,13 +9,13 @@
 
 
 import sys
-import optparse 
+import optparse
 import os
 import pdb
 import csv
 import random
 
-from eVIP_compare import getSelfConnectivity, getConnectivity
+from eVIP_predict import getSelfConnectivity, getConnectivity
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -74,14 +74,14 @@ class OptionParser(optparse.OptionParser):
 ###############
 # END CLASSES #
 ###############
- 
+
 ########
-# MAIN #	
+# MAIN #
 ########
 def main():
-	
+
     opt_parser = OptionParser()
-   
+
     # Add Options. Required options should have default=None
     opt_parser.add_option("--pred_file",
                           dest="pred_file",
@@ -181,7 +181,7 @@ def main():
                           default=None)
 
     (options, args) = opt_parser.parse_args()
-	
+
     # validate the command line arguments
     opt_parser.check_required("--pred_file")
 #    opt_parser.check_required("--col")
@@ -198,7 +198,7 @@ def main():
     else:
         os.mkdir(options.out_dir)
         out_dir = os.path.abspath(options.out_dir)
-        print "Creating output directory: %s" % out_dir 
+        print "Creating output directory: %s" % out_dir
 
     pdf = options.pdf
     use_c_pval = options.use_c_pval
@@ -209,7 +209,7 @@ def main():
     allele_col = options.allele_col
 
     ref_allele_mode = options.ref_allele_mode
-    
+
     corr_val_str = options.corr_val_str
 
     cell_id = options.cell_id
@@ -230,15 +230,15 @@ def main():
     sig_gctx.read()
 
     # Process predictions
-    # allele2pvals = {allele:[mut vs wt pval, 
+    # allele2pvals = {allele:[mut vs wt pval,
     #                         wt vs mut-wt pval,
-    #                         mut-wt conn pval]                            
+    #                         mut-wt conn pval]
     (gene2wt,
      gene2allele_call,
      gene2num_alleles,
      allele2pvals) = parse_pred_file(pred_file, pred_col, use_c_pval,
                                      ref_allele_mode)
-    
+
 
     allele2distil_ids = parse_sig_info( sig_info, allele_col, cell_id, plate_id)
 
@@ -249,10 +249,10 @@ def main():
                                   4*3)
 
         grid_size = (4, gene2num_alleles[gene] + 1)
-        
+
         wt_heatmap_ax = plt.subplot2grid(grid_size, (0,0))
-        wt_im = plot_rep_heatmap(wt_heatmap_ax, 
-                         this_gctx.frame, 
+        wt_im = plot_rep_heatmap(wt_heatmap_ax,
+                         this_gctx.frame,
                          allele2distil_ids[gene2wt[gene]],
                          allele2distil_ids[gene2wt[gene]],
                          gene2wt[gene],
@@ -260,9 +260,9 @@ def main():
 
         # WT self connectivity
         wt_self, wt_self_row_medians = getSelfConnectivity(this_gctx,
-                                                           allele2distil_ids[gene2wt[gene]],        
+                                                           allele2distil_ids[gene2wt[gene]],
                                                            len(allele2distil_ids[gene2wt[gene]]))
-        
+
         # Create consistent x values for the wt reps when plotting
         wt_x_vals = []
         for val in wt_self_row_medians:
@@ -278,7 +278,7 @@ def main():
             for allele in gene2allele_call[gene][type]:
 
                 # CREATE SCATTERPLOT FIGURE
-                plot_signatures(pdf, out_dir, 
+                plot_signatures(pdf, out_dir,
                                 sig_gctx.frame,
                                 gene2wt[gene],
                                 allele,
@@ -286,7 +286,7 @@ def main():
                                 allele2distil_ids[allele])
 
                 # PLOT HEATMAP
-                this_hm_ax = plt.subplot2grid(grid_size, 
+                this_hm_ax = plt.subplot2grid(grid_size,
                                              (0, col_counter))
                 plot_rep_heatmap(this_hm_ax,
                                  this_gctx.frame,
@@ -317,7 +317,7 @@ def main():
                 wt_mut, wt_mut_row_medians = getConnectivity(this_gctx,
                                                              allele2distil_ids[gene2wt[gene]],
                                                              allele2distil_ids[allele],
-                                                             len(allele2distil_ids[allele]))                
+                                                             len(allele2distil_ids[allele]))
 
                 plot_jitter(this_jitter_ax,
                             col_counter,
@@ -332,7 +332,7 @@ def main():
                             use_c_pval,
                             ymin, ymax,
                             corr_val_str)
-                            
+
 
                 # Compared to random connectivity
                 conn_ax = plt.subplot2grid(grid_size,
@@ -347,14 +347,14 @@ def main():
                           corr_val_str)
 
                 col_counter += 1
-      
-        if pdf:  
+
+        if pdf:
             this_fig.savefig("%s/%s_impact_pred_plots.pdf" % (out_dir, gene),
                              format="pdf")
         else:
             this_fig.savefig("%s/%s_impact_pred_plots.png" % (out_dir, gene))
         plt.close(this_fig)
-			
+
     sys.exit(0)
 
 ############
@@ -390,9 +390,9 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
     gene2wt,
     gene2allele_call,
     gene2num_alleles
-    allele2pvals = {allele:[mut vs wt pval, 
+    allele2pvals = {allele:[mut vs wt pval,
                              wt vs mut-wt pval,
-                             mut-wt conn pval]                            
+                             mut-wt conn pval]
     """
     csv_reader = csv.DictReader(pred_file, delimiter="\t")
 
@@ -400,9 +400,9 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
     gene2allele_call = {}
     gene2num_alleles = {}
     allele2pvals = {}
-    for row in csv_reader:   
-        gene = row["gene"] 
-    
+    for row in csv_reader:
+        gene = row["gene"]
+
         wt = row["wt"]
 
         if ref_allele_mode:
@@ -419,7 +419,7 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
             wt_vs_mut_wt_pval = row["wt_mut_rep_vs_wt_mut_conn_pval"]
             mut_wt_conn_pval = row["mut_wt_conn_null_pval"]
 
-        pred = row[pred_col]    
+        pred = row[pred_col]
 
         # Set WT allele
         if gene in gene2wt:
@@ -435,7 +435,7 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
             # Initialize
             gene2allele_call[gene] = {}
             for type in PRED_TYPE:
-                gene2allele_call[gene][type] = [] 
+                gene2allele_call[gene][type] = []
             gene2num_alleles[gene] = 0
 
         gene2allele_call[gene][pred].append(allele)
@@ -449,10 +449,10 @@ def parse_pred_file(pred_file, pred_col, use_c_pval, ref_allele_mode):
 
 def parse_sig_info(sig_info, allele_col, cell_id=None, plate_id=None):
     allele2distil_ids = {}
-    
+
     csv_reader = csv.DictReader(sig_info, delimiter="\t")
-    
-    for row in csv_reader:   
+
+    for row in csv_reader:
         if cell_id:
             if cell_id not in row["cell_id"]:
                 continue
@@ -466,10 +466,10 @@ def parse_sig_info(sig_info, allele_col, cell_id=None, plate_id=None):
         allele2distil_ids[allele] = distil_ids
 
     return allele2distil_ids
-    
+
 def plot_conn(conn_ax, col_counter, null_conn, wt_mut_row_medians,
               conn_pval_text, use_c_pval, corr_val_str):
-   
+
     conn_ax.hist(np.array(null_conn),
                  histtype='stepfilled',
                  normed=True,
@@ -487,7 +487,7 @@ def plot_conn(conn_ax, col_counter, null_conn, wt_mut_row_medians,
 
     if col_counter == 1:
         conn_ax.set_ylabel("relative frequency")
-                
+
     conn_ax.set_yticklabels([])
 
     if use_c_pval:
@@ -499,10 +499,10 @@ def plot_conn(conn_ax, col_counter, null_conn, wt_mut_row_medians,
                  va='bottom',
                  transform = conn_ax.transAxes,
                  size='x-small')
- 
+
 def plot_jitter(jitter_ax, col_counter,
                 wt_x_vals,
-                wt_self_row_medians, 
+                wt_self_row_medians,
                 mt_self_row_medians,
                 wt_mut_row_medians,
 #                null_x_vals,
@@ -548,7 +548,7 @@ def plot_jitter(jitter_ax, col_counter,
 #                               rotation=45,
 #                               ha='right',
                                size='x-small')
-                                
+
     # Add p-value text
     if use_c_pval:
         pval_type = "cP"
@@ -568,7 +568,7 @@ def plot_jitter(jitter_ax, col_counter,
 def plot_rep_heatmap(heatmap_ax, df, distil_ids1, distil_ids2, title, ymin, ymax):
     heatmap_data = df.loc[distil_ids1,distil_ids2]
     dists = distance.squareform(distance.pdist(heatmap_data))
-    clusters = sch.linkage(dists, method="average") 
+    clusters = sch.linkage(dists, method="average")
     den = sch.dendrogram(clusters,color_threshold=np.inf, no_plot=True)
 
     this_im = heatmap_ax.imshow(heatmap_data.ix[den['leaves'],den['leaves']],
@@ -579,7 +579,7 @@ def plot_rep_heatmap(heatmap_ax, df, distil_ids1, distil_ids2, title, ymin, ymax
 
     heatmap_ax.get_xaxis().set_visible(False)
     heatmap_ax.get_yaxis().set_visible(False)
-    
+
     heatmap_ax.set_title(title, size='x-small')
 
     return this_im
@@ -593,7 +593,7 @@ def plot_signatures(pdf, out_dir, sig_gctx_frame, wt_allele, mut_allele,
     grid_size = (num_reps*2, num_reps*2)
 
     all_distil_ids = wt_distil_ids + mut_distil_ids
-   
+
     for i in range(num_reps * 2):
         for j in range(i,num_reps*2):
             this_ax = plt.subplot2grid(grid_size, (i,j))
@@ -601,12 +601,12 @@ def plot_signatures(pdf, out_dir, sig_gctx_frame, wt_allele, mut_allele,
                 if i < num_reps:
                     this_ax.text(0.25,0.5,
                                  wt_allele,
-                                 size='large') 
+                                 size='large')
                 else:
                     this_ax.text(0.25,0.5,
                                  mut_allele,
                                  size='large',
-                                 color='red') 
+                                 color='red')
                 continue
 
             # linear fit to data
@@ -632,7 +632,7 @@ def plot_signatures(pdf, out_dir, sig_gctx_frame, wt_allele, mut_allele,
 
             this_ax.set_xlim(Z_MIN,Z_MAX)
             this_ax.set_ylim(Z_MIN,Z_MAX)
-    
+
     if pdf:
         this_fig.savefig("%s/%s_%s_scatter_plots.pdf" % (out_dir, wt_allele, mut_allele),
                          format="pdf")
@@ -641,6 +641,6 @@ def plot_signatures(pdf, out_dir, sig_gctx_frame, wt_allele, mut_allele,
 
     plt.close(this_fig)
 #################
-# END FUNCTIONS #	
-#################	
+# END FUNCTIONS #
+#################
 if __name__ == "__main__": main()
