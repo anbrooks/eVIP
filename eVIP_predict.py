@@ -123,6 +123,12 @@ def main():
                           type="int",
                           help="Number of iterations to run. DEF=%d" % NUM_ITERATIONS,
                           default=NUM_ITERATIONS)
+    # opt_parser.add_option("--rep_null",
+    #                       dest="rep_null_input",
+    #                       type="string",
+    #                       help="""Optional file containing rep null values from a previous
+    #                               run. Should end in _rep_null.txt""",
+    #                      default=None)
     opt_parser.add_option("--conn_null",
                           dest="conn_null_input",
                           type="string",
@@ -231,6 +237,7 @@ def main():
     ie_col = options.ie_col
     ie_filter = options.ie_filter
 
+    #rep_null_input = options.rep_null_input
     conn_null_input = options.conn_null_input
 
     #options from predict
@@ -240,6 +247,7 @@ def main():
     mut_wt_rep_diff = options.mut_wt_rep_diff
     use_c_pval = options.use_c_pval
     conn_null_med = options.conn_null_med
+
 
     if conn_null_input:
         conn_nulls_from_input_str = grp.read_grp(conn_null_input)
@@ -272,22 +280,15 @@ def main():
     if conn_null_input:
         connectivity_null_dist = conn_nulls_from_input
 
-    # calculate percentiles of each null distribution
-    rep_precentiles =  numpy.percentile(replicate_null_dist, [2.5,5,10,50,90,95,97.5])
-    rep_null_distribution_out = open(options.output_table+ "_rep_null.txt", "w")
-    for x in replicate_null_dist:
-        rep_null_distribution_out.write("%f\n" % x)
-    rep_null_distribution_out.close()
 
-    conn_percentiles = numpy.percentile(connectivity_null_dist, [2.5,5,10,50,90,95,97.5])
     if not conn_null_input:
         conn_null_dist_out = open(options.output_table+ "_conn_null.txt", "w")
         for x in connectivity_null_dist:
             conn_null_dist_out.write("%f\n" % x)
         conn_null_dist_out.close()
 
-    WT_dict, wt_rep_pvals, wt_ordered = buildWT_dict(this_gctx, allele2distil_id, WT_alleles, replicate_null_dist,
-                       num_reps)
+
+    WT_dict = buildWT_dict(this_gctx, allele2distil_id, WT_alleles, num_reps)
 
     column_headers = ["gene",
                       "mut",
@@ -307,7 +308,6 @@ def main():
     file_writer = csv.DictWriter(output, delimiter="\t",fieldnames=column_headers)
     file_writer.writeheader()
 
-    mut_rep_pvals = []
     mut_wt_rep_pvals = []
     mut_wt_conn_pvals = []
     mut_wt_rep_vs_wt_mut_conn_pvals = []
@@ -324,10 +324,6 @@ def main():
         mut_rankpt, mut_rankpt_dist = getSelfConnectivity(this_gctx,
                                                           allele2distil_id[allele],
                                                           num_reps)
-
-        self_pval = getPairwiseComparisons(mut_rankpt_dist,
-                                           replicate_null_dist)
-        mut_rep_pvals.append(self_pval)
 
         mut_wt_conn_rankpt, mut_wt_conn_dist = getConnectivity(this_gctx,
                                                                allele2distil_id[allele],
@@ -348,8 +344,6 @@ def main():
         mut_wt_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
 
         # Calculate corrected pvalues
-        mut_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_rep_pvals), "BH")
-        wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(wt_rep_pvals), "BH")
         mut_wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_pvals), "BH")
         mut_wt_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_conn_pvals), "BH")
         mut_wt_rep_vs_wt_mut_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_vs_wt_mut_conn_pvals), "BH")
@@ -408,7 +402,7 @@ def main():
         # Getting wt c_pval
         this_outlist = outlines[i].split("\t")
         this_wt = this_outlist[WT_IDX]
-        wt_idx = wt_ordered.index(this_wt)
+        #wt_idx = wt_ordered.index(this_wt)
 
         this_outline += "\t%f\t" % mut_wt_rep_c_pvals[i]
         this_outline += "%f\t" % mut_wt_conn_c_pvals[i]
@@ -426,30 +420,23 @@ def main():
 #############
 # FUNCTIONS #
 #############
-def buildWT_dict(this_gctx, allele2distil_id, WT_alleles, replicate_null_dist, num_reps):
+def buildWT_dict(this_gctx, allele2distil_id, WT_alleles, num_reps):
     """
     {WT_allele:{"wt_rep": med_wt_rep,
                 "wt_rep_dist":[]
                 "wt_rep_pval": p_val vs null}
     """
     WT_dict = {}
-    wt_rep_pvals = []
-    wt_allele_ordered = []
+
     for allele in WT_alleles:
         WT_dict[allele] = {}
         wt_rep_rankpt, rep_rankpts = getSelfConnectivity(this_gctx,
                                                         allele2distil_id[allele],
                                                         num_reps)
-
         WT_dict[allele]["wt_rep"] = wt_rep_rankpt
         WT_dict[allele]["wt_rep_dist"] = rep_rankpts
-        wt_rep_pval = getPairwiseComparisons(rep_rankpts,
-                                             replicate_null_dist)
-        WT_dict[allele]["wt_rep_pval"] = wt_rep_pval
-        wt_rep_pvals.append(wt_rep_pval)
-        wt_allele_ordered.append(allele)
 
-    return WT_dict, wt_rep_pvals, wt_allele_ordered
+    return WT_dict
 
 def formatDir(i_dir):
     i_dir = os.path.realpath(i_dir)
@@ -519,13 +506,6 @@ def getConnectivity(this_gctx, distil_ids1, distil_ids2, num_reps):
 
     return numpy.percentile(row_column_medians, 50), row_column_medians
 
-#   conn_rankpts = []
-#   for i in range(num_reps):
-#       for j in range(num_reps):
-#           conn_rankpts.append(float(this_gctx.frame[distil_ids1[i]]
-#                                                    [distil_ids2[j]]))
-
-#   return numpy.percentile(conn_rankpts, 50), conn_rankpts
 
 def getLog(vals):
     out_vals = []
@@ -554,6 +534,8 @@ def getNullDist(this_gctx, allele2distil_id, controls,
 
     allele_list = allele2distil_id.keys()
 
+
+
     c = 0
     while c < num_iterations:
         random_control = random.choice(controls)
@@ -572,36 +554,21 @@ def getNullDist(this_gctx, allele2distil_id, controls,
 
         control_distil_ids = list(control_distil_ids_set)
 
-        # Get replicate null
-        # First version. control vs. pert. This approach seemed to not be the
-        # best control.
-#       rep_null_dist.append(float(this_gctx.frame[random.choice(allele2distil_id[random_control])]
-#                                                 [random.choice(allele2distil_id[random_allele])]))
 
         # Introspect similarity is median of row similarities
         rank_pts = []
         for i in range(1, num_reps):
             rank_pts.append(float(this_gctx.frame[control_distil_ids[0]][control_distil_ids[i]]))
 
-#       for i in range(num_reps):
-#           for j in range(i+1,num_reps):
-#               rank_pts.append(float(this_gctx.frame[control_distil_ids[i]][control_distil_ids[j]]))
 
         rep_null_dist.append(numpy.percentile(rank_pts, 50))
-
-#        rep_null_dist.append(float(this_gctx.frame[control_distil_ids[0]]
-#                                                  [control_distil_ids[1]]))
-
 
         # Get connectivity null
         rank_pts = []
         for i in range(num_reps):
             rank_pts.append(float(this_gctx.frame[allele2distil_id[random_control][0]]
                                                  [allele2distil_id[random_allele][i]]))
-#       for i in range(num_reps):
-#           for j in range(num_reps):
-#               rank_pts.append(float(this_gctx.frame[allele2distil_id[random_control][i]]
-#                                                    [allele2distil_id[random_allele][j]]))
+
 
         connectivity_null_dist.append(numpy.percentile(rank_pts, 50))
 
@@ -658,7 +625,7 @@ def parse_sig_info(sig_info_file, ref2test_allele, allele_col, ie_col, ie_filter
 
     for line in sig_info_file:
         line = formatLine(line)
-        lineList = line.split()
+        lineList = line.split("\t")
 
         if "distil_id" in line:
             sig_id_idx = lineList.index("sig_id")

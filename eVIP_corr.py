@@ -64,7 +64,7 @@ def main():
 
     input_file = open(options.input, "r")
     z_output= open(options.z_output+".txt", "w+")
-    sp_output = open(options.sp_output+".txt", "w")
+    sp_output = open(options.sp_output+".gct", "w")
 
     t_vals=[]
     z_outline = []
@@ -83,8 +83,7 @@ def main():
             header = line
             header += "\n"
             ncol_vals = int(ncols)-1
-            print ncol_vals
-            sp_output.write(str(ncol_vals)+"\t"+str(ncol_vals)+"\n")
+            sp_output.write(str(ncol_vals)+"\t"+str(ncol_vals)+"\t"+"0"+"\t"+"0"+"\n")
             z_output.write(header)
             sp_output.write(header)
             continue
@@ -142,14 +141,15 @@ def main():
 
     sp_matrix = (stats.spearmanr(data))
 
-
     n=1
     for line in sp_matrix[0]:
         sp_line = np.ndarray.tolist(line)
         header_list = header.split("\t")
         sp_line.insert(0,header_list[n])
         for i in sp_line:
-            sp_output.write(str(i).replace("\n", "") + "\t")
+            sp_output.write(str(i).replace("\n", ""))
+            if i != sp_line[-1]:
+                sp_output.write("\t")
         sp_output.write("\n")
         n = n + 1
 
