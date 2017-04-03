@@ -7,6 +7,7 @@
 # Copyright (c) 2011, Angela Brooks. anbrooks@gmail.com
 # All rights reserved.
 
+#!/usr/bin/python
 
 import sys
 import optparse
