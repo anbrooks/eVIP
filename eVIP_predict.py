@@ -1,4 +1,5 @@
 #!/broad/software/free/Linux/redhat_5_x86_64/pkgs/python_2.5.4/bin/python
+#!/usr/bin/python
 # mutation_impact
 # Author: Angela Brooks
 # Program Completion Date:
@@ -412,6 +413,219 @@ def main():
 
         output.write(this_outline)
 
+def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=None, conn_null=None,
+                  allele_col=None,
+                  ie_col=None, ie_filter=None, cell_id=None, plate_id=None,
+                  i=None, num_reps=None, mut_wt_rep_thresh=None,
+                  disting_thresh=None, mut_wt_rep_rank_diff=None,
+                  conn_null_med=None, use_c_pval=None):
+
+    if sig_info == None:
+        raise Exception("Missing input file in function call")
+    if o == None:
+        raise Exception("Missing input file in function call")
+    if c == None:
+        raise Exception("Missing input file in function call")
+    if r == None:
+        raise Exception("Missing input file in function call")
+    if gctx == None:
+        raise Exception("Missing input file in function call")
+
+    # setting defaults (double check if numbers are right)
+    ie_filter = float(ie_filter) if ie_filter != None else float(0.0)
+    conn_thresh = float(conn_thresh) if conn_thresh != None else float(0.05)
+    allele_col = str(allele_col) if allele_col != None else str(x_mutation_status)
+    ie_col = str(ie_col) if ie_col != None else str(x_ie_a549)
+    # do i need the "" here?
+    i = int(i) if i != None else int(1000)
+    num_reps = int(num_reps) if num_reps != None else int(3)
+    mut_wt_rep_thresh = float(mut_wt_rep_thresh) if mut_wt_rep_thresh != None else float(0.05)
+    disting_thresh = float(disting_thresh) if disting_thresh != None else float(0.05)
+    mut_wt_rep_rank_diff = float(mut_wt_rep_rank_diff) if mut_wt_rep_rank_diff != None else float(0)
+
+    sig_info_file = open(sig_info)
+    output = open(o, "w")
+
+    # Output distribution files
+    controls = grp.read_grp(c)
+
+    reference_test_filename = r
+    ref2test_allele = None
+    if reference_test_filename:
+        ref2test_allele = parseRefTestFile(reference_test_filename)
+
+    this_gctx = gct.GCT(gctx)
+    this_gctx.read()
+
+    num_iterations = i
+    c_thresh = conn_thresh
+    num_reps = int(num_reps)
+    mut_wt_thresh = mut_wt_rep_thresh
+    mut_wt_rep_diff = mut_wt_rep_rank_diff
+
+
+    if conn_null:
+        conn_nulls_from_input_str = grp.read_grp(conn_null)
+        conn_nulls_from_input = map(float, conn_nulls_from_input_str)
+
+
+    (allele2distil_id,
+     allele2WT,
+     allele2gene,
+     allele2cell_id,
+     WT_alleles) = parse_sig_info(sig_info_file,
+                                  ref2test_allele,
+                                  allele_col,
+                                  ie_col,
+                                  ie_filter,
+                                  cell_id,
+                                  plate_id)
+
+    clean_controls = []
+
+    for this_control in controls:
+        if this_control in allele2distil_id:
+            clean_controls.append(this_control)
+
+    if not conn_null:
+        replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
+                                                                  allele2distil_id,
+                                                                  clean_controls,
+                                                                  num_iterations,
+                                                                  num_reps)
+
+    if conn_null:
+        connectivity_null_dist = conn_nulls_from_input
+
+    if not conn_null:
+        conn_null_dist_out = open(o + "_conn_null.txt", "w")
+        for x in connectivity_null_dist:
+            conn_null_dist_out.write("%f\n" % x)
+        conn_null_dist_out.close()
+
+    WT_dict = buildWT_dict(this_gctx, allele2distil_id, WT_alleles, num_reps)
+
+    column_headers = ["gene",
+                      "mut",
+                      "mut_rep",
+                      "wt_rep",
+                      "mut_wt_connectivity",
+                      "wt",
+                      "cell_line",
+                      "mut_wt_rep_pval",
+                      "mut_wt_conn_null_pval",
+                      "wt_mut_rep_vs_wt_mut_conn_pval",
+                      "mut_wt_rep_c_pval",
+                      "mut_wt_conn_null_c_pval",
+                      "wt_mut_rep_vs_wt_mut_conn_c_pval",
+                      "prediction"]
+
+    file_writer = csv.DictWriter(output, delimiter="\t", fieldnames=column_headers)
+    file_writer.writeheader()
+
+    mut_wt_rep_pvals = []
+    mut_wt_conn_pvals = []
+    mut_wt_rep_vs_wt_mut_conn_pvals = []
+    outlines = []
+    predictions = []
+
+    # Build comparison
+    for allele in allele2WT:
+
+        # Don't calculate for the WT allele
+        if allele == allele2WT[allele]:
+            continue
+
+        mut_rankpt, mut_rankpt_dist = getSelfConnectivity(this_gctx,
+                                                          allele2distil_id[allele],
+                                                          num_reps)
+
+        mut_wt_conn_rankpt, mut_wt_conn_dist = getConnectivity(this_gctx,
+                                                               allele2distil_id[allele],
+                                                               allele2distil_id[allele2WT[allele]],
+                                                               num_reps)
+
+        conn_pval = getPairwiseComparisons(mut_wt_conn_dist,
+                                           connectivity_null_dist)
+
+        mut_wt_conn_pvals.append(conn_pval)
+
+        mut_wt_rep_pval = getPairwiseComparisons(mut_rankpt_dist,
+                                                 WT_dict[allele2WT[allele]]["wt_rep_dist"])
+        mut_wt_rep_pvals.append(mut_wt_rep_pval)
+
+        wt_mut_rep_vs_wt_mut_conn_pval = getKruskal(WT_dict[allele2WT[allele]]["wt_rep_dist"],
+                                                    mut_rankpt_dist,
+                                                    mut_wt_conn_dist)
+        mut_wt_rep_vs_wt_mut_conn_pvals.append(wt_mut_rep_vs_wt_mut_conn_pval)
+
+        # Calculate corrected pvalues
+        mut_wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_pvals), "BH")
+        mut_wt_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_conn_pvals), "BH")
+        mut_wt_rep_vs_wt_mut_conn_c_pvals = robjects.r['p.adjust'](
+            robjects.FloatVector(mut_wt_rep_vs_wt_mut_conn_pvals), "BH")
+
+        out_elems = [allele2gene[allele],
+                     allele,
+                     "%f" % mut_rankpt,
+                     "%f" % WT_dict[allele2WT[allele]]["wt_rep"],
+                     "%f" % mut_wt_conn_rankpt,
+                     allele2WT[allele],
+                     allele2cell_id[allele],
+                     "%f" % mut_wt_rep_pval,
+                     "%f" % conn_pval,
+                     "%f" % wt_mut_rep_vs_wt_mut_conn_pval]
+
+        outline = "\t".join(out_elems)
+        outlines.append(outline)
+
+        if use_c_pval:
+            prediction = get_prediction_6(float(WT_dict[allele2WT[allele]]["wt_rep"]),
+                                          float(mut_rankpt),
+                                          float(mut_wt_rep_c_pvals[i]),
+                                          float(mut_wt_conn_rankpt),
+                                          float(mut_wt_conn_c_pvals[i]),
+                                          float(mut_wt_rep_vs_wt_mut_conn_c_pvals[i]),
+                                          mut_wt_thresh,
+                                          mut_wt_rep_diff,
+                                          c_thresh,
+                                          disting_thresh,
+                                          conn_null_med)
+            predictions.append(prediction)
+        else:
+            prediction = get_prediction_6(float(WT_dict[allele2WT[allele]]["wt_rep"]),
+                                          float(mut_rankpt),
+                                          float(mut_wt_rep_pval),
+                                          float(mut_wt_conn_rankpt),
+                                          float(conn_pval),
+                                          float(wt_mut_rep_vs_wt_mut_conn_pval),
+                                          mut_wt_thresh,
+                                          mut_wt_rep_diff,
+                                          c_thresh,
+                                          disting_thresh,
+                                          conn_null_med)
+
+            predictions.append(prediction)
+
+    # Write to file
+    # how many outlines?
+    num_lines = len(outlines)
+    count = 0
+    # for each outline
+    for i in range(num_lines):
+        this_outline = outlines[i]
+        # Getting wt c_pval
+        this_outlist = outlines[i].split("\t")
+        this_wt = this_outlist[WT_IDX]
+        # wt_idx = wt_ordered.index(this_wt)
+
+        this_outline += "\t%f\t" % mut_wt_rep_c_pvals[i]
+        this_outline += "%f\t" % mut_wt_conn_c_pvals[i]
+        this_outline += "%f\t" % mut_wt_rep_vs_wt_mut_conn_c_pvals[i]
+        this_outline += "%s\t" % predictions[i]
+        this_outline += "\n"
+
+        output.write(this_outline)
 
 ############
 # END_MAIN #
