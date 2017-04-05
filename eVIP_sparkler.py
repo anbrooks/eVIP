@@ -488,6 +488,312 @@ def main():
 
     sys.exit(0)
 
+
+def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=None, use_c_pval=None,
+                  annotate=None, by_gene_color=None, pdf=None, xmin=None, xmax=None, ymin=None, ymax=None,
+                  out_dir=None):
+    x_thresh = float(x_thresh)
+    y_thresh = float(y_thresh)
+
+    # setting default values
+    xmin = float(xmin) if xmin != None else float(0.0)
+    xmax = float(xmax) if xmax != None else float(4.0)
+    ymin = float(ymin) if ymin != None else float(-3.0)
+    ymax = float(ymax) if ymax != None else float(3.0)
+
+    pred_file = open(pred_file)
+    if pdf:
+        format = "pdf"
+    else:
+        format = "png"
+
+    if os.path.exists(out_dir):
+        out_dir = os.path.abspath(out_dir)
+    else:
+        os.mkdir(out_dir)
+        out_dir = os.path.abspath(out_dir)
+        print "Creating output directory: %s" % out_dir
+
+    x_thresh = getNegLog10(x_thresh, xmax)
+    y_thresh = getNegLog10(y_thresh, ymax)
+    annotate = annotate
+    pred_col = DEF_PRED_COL
+    ref_allele_mode = ref_allele_mode
+
+    gene2type = None
+    if by_gene_color:
+        gene2type = parseGeneColor(by_gene_color)
+
+    (gene2mut_wt,
+     gene2mut_wt_rep_p,
+     gene2neg_log_p,
+     gene2diff_score,
+     gene2allele,
+     gene2col,
+     gene_type2pred2count,
+     gene2markerstyle) = parse_pred_file(pred_file, x_thresh, y_thresh,
+                                         pred_col, use_c_pval, gene2type, ref_allele_mode, xmax, ymax)
+
+    if gene2type:
+        # Print out gene type and prediction counts
+        for gene_type in gene_type2pred2count:
+            print "###%s###" % gene_type
+            for pred in gene_type2pred2count[gene_type]:
+                print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
+
+        gene_type2data = {"ONC": {"mut_wt": [],
+                                  "mut_wt_rep_p": [],
+                                  "neg_log_p": [],
+                                  "markerstyle": [],
+                                  "col": []},
+                          "TSG": {"mut_wt": [],
+                                  "mut_wt_rep_p": [],
+                                  "neg_log_p": [],
+                                  "markerstyle": [],
+                                  "col": []},
+                          "TSG_noTP53": {"mut_wt": [],
+                                         "mut_wt_rep_p": [],
+                                         "neg_log_p": [],
+                                         "markerstyle": [],
+                                         "col": []},
+                          "ONC-NEG": {"mut_wt": [],
+                                      "mut_wt_rep_p": [],
+                                      "neg_log_p": [],
+                                      "markerstyle": [],
+                                      "col": []}}
+    all_mut_wt = []
+    all_mut_wt_rep_p = []
+    all_neg_log_p = []
+    all_col = []
+    all_diff_score = []
+    all_markerstyle = []
+
+    for gene in gene2allele:
+
+        this_fig = plt.figure()
+        ax = this_fig.add_subplot(111)
+
+        #        plt.axhline(y=0, color="grey")
+
+        all_mut_wt.extend(gene2mut_wt[gene])
+        all_mut_wt_rep_p.extend(gene2mut_wt_rep_p[gene])
+        all_neg_log_p.extend(gene2neg_log_p[gene])
+        all_col.extend(gene2col[gene])
+        all_diff_score.extend(gene2diff_score[gene])
+        all_markerstyle.extend(gene2markerstyle[gene])
+
+        if gene not in gene2type:
+            gene2type[gene] = "UNKN"
+
+        # Add to gene-type specific plot data
+        for gene_type in gene_type2data:
+            gene_type2data[gene_type]["mut_wt"].extend(gene2mut_wt[gene])
+            gene_type2data[gene_type]["mut_wt_rep_p"].extend(gene2mut_wt_rep_p[gene])
+            gene_type2data[gene_type]["neg_log_p"].extend(gene2neg_log_p[gene])
+            gene_type2data[gene_type]["markerstyle"].extend(gene2markerstyle[gene])
+
+            gene_root = gene.split("_")[0]
+            if gene_type == "TSG_noTP53":
+                if gene2type[gene_root] == "TSG" and gene != "TP53":
+                    gene_type2data[gene_type]["col"].extend(gene2col[gene])
+                else:
+                    gene_type2data[gene_type]["col"].extend(makeGrey(gene2col[gene]))
+            else:
+                if gene2type[gene_root] == gene_type:
+                    gene_type2data[gene_type]["col"].extend(gene2col[gene])
+                else:
+                    gene_type2data[gene_type]["col"].extend(makeGrey(gene2col[gene]))
+
+        (main_markers,
+         neg_markers) = split_data(gene2markerstyle[gene],
+                                   gene2neg_log_p[gene],
+                                   gene2mut_wt_rep_p[gene],
+                                   gene2col[gene])
+
+        try:
+            plt.scatter(main_markers["x"],
+                        main_markers["y"],
+                        s=MARKER_SIZE,
+                        c=main_markers["col"],
+                        marker=MAIN_MARKER,
+                        edgecolors="none",
+                        linewidth=0)
+        except:
+            pdb.set_trace()
+
+        plt.scatter(neg_markers["x"],
+                    neg_markers["y"],
+                    s=MARKER_SIZE,
+                    c=neg_markers["col"],
+                    marker=NEG_MARKER,
+                    linewidth=4)
+
+        for i in range(len(gene2neg_log_p[gene])):
+            this_col = gene2col[gene][i]
+            if this_col == colorConverter.to_rgba("#ffffff", 1):  # white
+                this_col = "black"
+            plt.plot([0, gene2neg_log_p[gene][i]],
+                     [0, gene2mut_wt_rep_p[gene][i]],
+                     color=this_col,
+                     linewidth=SPARKLER_LINEWIDTH)
+
+        if annotate:
+            for i in range(len(gene2allele[gene])):
+                ax.annotate(gene2allele[gene][i],
+                            (gene2neg_log_p[gene][i],
+                             gene2mut_wt_rep_p[gene][i]),
+                            textcoords='data')
+
+        plt.axvline(x=x_thresh, color="grey", ls=THRESH_LS)
+
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
+
+        if use_c_pval:
+            ax.set_xlabel("-log10(corrected p-val)")
+        else:
+            ax.set_xlabel("-log10(p-val)")
+        ax.set_ylabel("impact direction score")
+
+        ax.text(100, -7, "MUT robustness < WT robustness", fontsize="small",
+                ha="center")
+        ax.text(100, 7, "MUT robustness > WT robustness", fontsize="small",
+                ha="center")
+
+        predictions = ["GOF", "LOF", "COF", "Neutral"]
+        colors = [GOF_COL, LOF_COL, COF_COL, "black"]
+
+        recs = []
+        for i in range(len(colors)):
+            recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=colors[i]))
+
+        this_fig.savefig("%s/%s_spark_plots.%s" % (out_dir, gene, format),
+                         format=format)
+
+        plt.close(this_fig)
+
+    # GENE-TYPE plots
+    for legend_flag in ["legend_on", "legend_off"]:
+        for gene_type in gene_type2data:
+            this_fig = plt.figure()
+            ax = this_fig.add_subplot(111)
+
+            #            plt.axhline(y=0, color="grey")
+
+            # Add lines
+            for i in range(len(gene_type2data[gene_type]["mut_wt"])):
+                this_col = gene_type2data[gene_type]["col"][i]
+                if this_col == colorConverter.to_rgba("#ffffff", 1):  # white
+                    this_col = INERT_COL
+                plt.plot([0, gene_type2data[gene_type]["neg_log_p"][i]],
+                         [0, gene_type2data[gene_type]["mut_wt_rep_p"][i]],
+                         #                         [0, gene_type2data[gene_type]["mut_wt"][i]],
+                         color=this_col,
+                         #                         alpha=0.5,
+                         linewidth=SPARKLER_LINEWIDTH)
+
+            (main_markers,
+             neg_markers) = split_data(gene_type2data[gene_type]["markerstyle"],
+                                       gene_type2data[gene_type]["neg_log_p"],
+                                       gene_type2data[gene_type]["mut_wt_rep_p"],
+                                       gene_type2data[gene_type]["col"])
+
+            plt.scatter(main_markers["x"],
+                        main_markers["y"],
+                        s=MARKER_SIZE,
+                        c=main_markers["col"],
+                        marker=MAIN_MARKER,
+                        edgecolors="none",
+                        linewidth=0)
+
+            plt.scatter(neg_markers["x"],
+                        neg_markers["y"],
+                        s=MARKER_SIZE,
+                        c=neg_markers["col"],
+                        marker=NEG_MARKER,
+                        linewidth=4)
+
+            plt.axvline(x=x_thresh, color="grey", ls=THRESH_LS)
+
+            plt.xlim(xmin, xmax)
+            plt.ylim(ymin, ymax)
+
+            if use_c_pval:
+                ax.set_xlabel("-log10(corrected p-val)")
+            else:
+                ax.set_xlabel("-log10(p-val)")
+            ax.set_ylabel("impact direction score")
+
+            ax.text(100, -7, "MUT robustness < WT robustness", fontsize="small",
+                    ha="center")
+            ax.text(100, 7, "MUT robustness > WT robustness", fontsize="small",
+                    ha="center")
+
+            if legend_flag == "legend_on":
+                plt.legend(recs, predictions, loc="lower right", fontsize='xx-small',
+                           title="prediction")
+
+            this_fig.savefig("%s/%s_spark_plots_%s.%s" % (out_dir,
+                                                          gene_type,
+                                                          legend_flag,
+                                                          format), format=format)
+
+            plt.close(this_fig)
+
+    # final plot
+    this_fig = plt.figure()
+    ax = this_fig.add_subplot(111)
+
+    # Add lines
+    for i in range(len(all_diff_score)):
+        this_col = all_col[i]
+        if this_col == "white":
+            this_col = "black"
+        plt.plot([0, all_neg_log_p[i]],
+                 [0, all_mut_wt_rep_p[i]],
+                 color=this_col,
+                 alpha=0.25,
+                 linewidth=ALL_SPARKLER_LINEWIDTH)
+
+    (main_markers,
+     neg_markers) = split_data(all_markerstyle,
+                               all_neg_log_p,
+                               all_mut_wt_rep_p,
+                               all_col)
+
+    plt.scatter(main_markers["x"],
+                main_markers["y"],
+                s=MARKER_SIZE,
+                c=main_markers["col"],
+                marker=MAIN_MARKER,
+                edgecolors="none",
+                linewidth=0)
+
+    plt.scatter(neg_markers["x"],
+                neg_markers["y"],
+                s=MARKER_SIZE,
+                c=neg_markers["col"],
+                marker=NEG_MARKER,
+                linewidth=4)
+
+    plt.axvline(x=x_thresh, color="grey", ls=THRESH_LS)
+
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin, ymax)
+
+    if use_c_pval:
+        ax.set_xlabel("-log10(corrected p-val)")
+    else:
+        ax.set_xlabel("-log10(p-val)")
+    ax.set_ylabel("impact direction score")
+
+    this_fig.savefig("%s/all_spark_plots.%s" % (out_dir, format), format=format)
+
+    plt.close(this_fig)
+
+    sys.exit(0)
+
+
 ############
 # END_MAIN #
 ############

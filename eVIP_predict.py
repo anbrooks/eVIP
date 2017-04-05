@@ -421,7 +421,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
                   conn_null_med=None, use_c_pval=None):
 
     if sig_info == None:
-        raise Exception("Missing input file in function call")
+        raise Exception("Missing sig_info file in function call")
     if o == None:
         raise Exception("Missing input file in function call")
     if c == None:
@@ -444,7 +444,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
     mut_wt_rep_rank_diff = float(mut_wt_rep_rank_diff) if mut_wt_rep_rank_diff != None else float(0)
 
     sig_info_file = open(sig_info)
-    output = open(o, "w")
+    output = open(o+".txt", "w")
 
     # Output distribution files
     controls = grp.read_grp(c)

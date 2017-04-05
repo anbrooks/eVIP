@@ -4,7 +4,7 @@ import os
 import scipy
 import eVIP_corr
 import eVIP_predict
-
+import eVIP_sparkler
 
 ########
 # MAIN #
@@ -35,10 +35,17 @@ def main():
     parser.add_argument("-cell_id", help = "Optional: Will only look at signatures from this cell line. Helps to filter sig_info file.")
     parser.add_argument("-plate_id", help = "Optional: Will only look at signatures from this plate")
     #from sparkler
-
-
-
-
+    parser.add_argument("-ref_allele_mode", help = "Sparkler: Instead of organizing plots by gene, will use the wt column to determine what are the reference alleles." )
+    parser.add_argument("-x_thresh" , help = "Sparkler: Threshold of significance")
+    parser.add_argument("-y_thresh", help = "Sparkler: Threshold of impact direction")
+    #parser.add_argument("-use_c_pval", action ="store_true", help = "Sparkler: Use corrected p-val instead of raw p-val")
+    parser.add_argument("-annotate", action ="store_true", help = "Sparkler: Will add allele labels to points.")
+    parser.add_argument("-by_gene_color", help = "Sparkler: File containing labels and colors for gene-cenric plot.")
+    parser.add_argument("-pdf", help = "Sparkler: Will print plots in pdf format instead of png.")
+    parser.add_argument("-xmin", help = "Sparkler: Min value of x-axis. DEF=0")
+    parser.add_argument("-xmax", help = "Sparkler: Max value of x-axis. DEF=4")
+    parser.add_argument("-ymin", help = "Sparkler: Min value of y-axis. DEF=-3")
+    parser.add_argument("-ymax", help = "Sparkler: Min value of y-axis. DEF=3")
 
     args = parser.parse_args()  # Call command line parser method
 
@@ -53,28 +60,24 @@ def main():
 
     #run eVIP_predict.py
     print('predicting...')
-    run_predict = eVIP_predict.eVIP_run_main(sig_info= args.sig_info,
-        o= out_dir+"/predict",c= args.c,r=args.r,
-        gctx= out_dir+"/spearman_rank_matrix.gct",
-        conn_thresh=args.conn_thresh,
-        conn_null = args.conn_null,
-        allele_col = args.allele_col,
-        ie_filter=args.ie_filter,
-        ie_col=args.ie_col,
-        cell_id = args.cell_id,
-        plate_id = args.plate_id,
-        i=args.i,
-        num_reps = args.num_reps,
-        mut_wt_rep_thresh = args.mut_wt_rep_thresh,
-        disting_thresh = args.disting_thresh,
-        mut_wt_rep_rank_diff = args.mut_wt_rep_rank_diff,
+    run_predict = eVIP_predict.eVIP_run_main(sig_info= args.sig_info, o= out_dir+"/predict",c= args.c,r=args.r,
+        gctx= out_dir+"/spearman_rank_matrix.gct", conn_thresh=args.conn_thresh, conn_null = args.conn_null,
+        allele_col = args.allele_col, ie_filter=args.ie_filter, ie_col=args.ie_col, cell_id = args.cell_id,
+        plate_id = args.plate_id, i=args.i, num_reps = args.num_reps, mut_wt_rep_thresh = args.mut_wt_rep_thresh,
+        disting_thresh = args.disting_thresh, mut_wt_rep_rank_diff = args.mut_wt_rep_rank_diff,
         conn_null_med= args.conn_null_med)
-
-    print "predictions done"
 
     #run sparkler
     print "making sparkler plots..."
-    #run_sparkler = eVIP_sparkler.main()
+
+
+    run_sparkler = eVIP_sparkler.eVIP_run_main(pred_file = out_dir+"/predict.txt", ref_allele_mode=args.ref_allele_mode,
+            y_thresh = args.y_thresh , x_thresh = args.x_thresh,
+            use_c_pval= args.use_c_pval,annotate=args.annotate, by_gene_color= args.by_gene_color, pdf= args.pdf,
+            xmin= args.xmin, xmax = args.xmax, ymin = args.ymin, ymax = args.ymax, out_dir = out_dir+"/sparkler_plots")
+
+
+
 
     #run viz
     print "making visualizations..."
