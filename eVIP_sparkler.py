@@ -791,8 +791,6 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=
 
     plt.close(this_fig)
 
-    sys.exit(0)
-
 
 ############
 # END_MAIN #

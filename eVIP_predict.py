@@ -198,11 +198,11 @@ def main():
                           action="store_true",
                           help="Will use corrected p-value instead of raw p-val",
                           default=False)
-    opt_parser.add_option("--conn_null_med",
-                      dest="conn_null_med",
-                      type="float",
-                      help="Median of null connectivity distribution.",
-                      default=None)
+    # opt_parser.add_option("--conn_null_med",
+    #                   dest="conn_null_med",
+    #                   type="float",
+    #                   help="Median of null connectivity distribution.",
+    #                   default=CONN_NULL_MED)
 
     (options, args) = opt_parser.parse_args()
 
@@ -247,7 +247,7 @@ def main():
     disting_thresh = options.disting_thresh
     mut_wt_rep_diff = options.mut_wt_rep_diff
     use_c_pval = options.use_c_pval
-    conn_null_med = options.conn_null_med
+    #conn_null_med = options.conn_null_med
 
 
     if conn_null_input:
@@ -374,8 +374,7 @@ def main():
                                           mut_wt_thresh,
                                           mut_wt_rep_diff,
                                           c_thresh,
-                                          disting_thresh,
-                                          conn_null_med)
+                                          disting_thresh)
             predictions.append(prediction)
         else:
             prediction = get_prediction_6(float(WT_dict[allele2WT[allele]]["wt_rep"]),
@@ -387,8 +386,7 @@ def main():
                                           mut_wt_thresh,
                                           mut_wt_rep_diff,
                                           c_thresh,
-                                          disting_thresh,
-                                          conn_null_med)
+                                          disting_thresh)
 
             predictions.append(prediction)
 
@@ -417,8 +415,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
                   allele_col=None,
                   ie_col=None, ie_filter=None, cell_id=None, plate_id=None,
                   i=None, num_reps=None, mut_wt_rep_thresh=None,
-                  disting_thresh=None, mut_wt_rep_rank_diff=None,
-                  conn_null_med=None, use_c_pval=None):
+                  disting_thresh=None, mut_wt_rep_rank_diff=None, use_c_pval=None):
 
     if sig_info == None:
         raise Exception("Missing sig_info file in function call")
@@ -442,6 +439,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
     mut_wt_rep_thresh = float(mut_wt_rep_thresh) if mut_wt_rep_thresh != None else float(0.05)
     disting_thresh = float(disting_thresh) if disting_thresh != None else float(0.05)
     mut_wt_rep_rank_diff = float(mut_wt_rep_rank_diff) if mut_wt_rep_rank_diff != None else float(0)
+    #conn_null_med = float(conn_null_med) if conn_null_med != None else float(0.05)
 
     sig_info_file = open(sig_info)
     output = open(o+".txt", "w")
@@ -589,8 +587,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
                                           mut_wt_thresh,
                                           mut_wt_rep_diff,
                                           c_thresh,
-                                          disting_thresh,
-                                          conn_null_med)
+                                          disting_thresh)
             predictions.append(prediction)
         else:
             prediction = get_prediction_6(float(WT_dict[allele2WT[allele]]["wt_rep"]),
@@ -602,8 +599,7 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
                                           mut_wt_thresh,
                                           mut_wt_rep_diff,
                                           c_thresh,
-                                          disting_thresh,
-                                          conn_null_med)
+                                          disting_thresh)
 
             predictions.append(prediction)
 
@@ -948,8 +944,7 @@ def updateDictOfSets(d, key, item):
         d[key] = set([item])
 def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
                      mut_wt_conn, mut_wt_conn_pval, disting_pval,
-                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh,
-                     conn_null_med):
+                     mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
 
     if disting_pval < disting_thresh:
         if max_diff(wt_rep, mut_rep, mut_wt_conn) < mut_wt_rep_diff:
