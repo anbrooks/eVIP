@@ -5,7 +5,7 @@ import scipy
 import eVIP_corr
 import eVIP_predict
 import eVIP_sparkler
-import eVIP_viz_for_run
+import eVIP_viz
 
 ########
 # MAIN #
@@ -71,16 +71,16 @@ def main():
         plate_id = args.plate_id, i=args.i, num_reps = args.num_reps, mut_wt_rep_thresh = args.mut_wt_rep_thresh,
         disting_thresh = args.disting_thresh, mut_wt_rep_rank_diff = args.mut_wt_rep_rank_diff)
 
-    #run sparkler
+    #run eVIP_sparkler.py
     print "making sparkler plots..."
     run_sparkler = eVIP_sparkler.eVIP_run_main(pred_file = out_dir+"/predict.txt", ref_allele_mode=args.ref_allele_mode,
             y_thresh = args.y_thresh , x_thresh = args.x_thresh,
             use_c_pval= args.use_c_pval,annotate=args.annotate, by_gene_color= args.by_gene_color, pdf= args.pdf,
             xmin= args.xmin, xmax = args.xmax, ymin = args.ymin, ymax = args.ymax, out_dir = out_dir+"/sparkler_plots")
 
-    #run viz
+    #run eVIP_viz.py
     print "making visualizations..."
-    run_viz = eVIP_viz_for_run.eVIP_run_main(pred_file= out_dir+"/predict.txt", sig_info = args.sig_info, gctx=out_dir+"/spearman_rank_matrix.gct",
+    run_viz = eVIP_viz.eVIP_run_main(pred_file= out_dir+"/predict.txt", sig_info = args.sig_info, gctx=out_dir+"/spearman_rank_matrix.gct",
             sig_gctx = out_dir+"/z_scores.gct", ref_allele_mode = args.ref_allele_mode, null_conn = out_dir+"/predict_conn_null.txt",
             out_dir = out_dir+"/viz",ymin = args.viz_ymin, ymax= args.viz_ymax, allele_col = args.allele_col, use_c_pval = args.use_c_pval,
             pdf = args.pdf, cell_id = args.cell_id, plate_id = args.plate_id, corr_val_str= args.corr_val)

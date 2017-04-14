@@ -1,3 +1,6 @@
+#!/usr/bin/python
+
+
 #!/broad/software/free/Linux/redhat_5_x86_64/pkgs/python_2.5.4/bin/python
 # mutation_impact_viz.py
 # Author: Angela Brooks
@@ -307,6 +310,13 @@ def main():
                                  gene2wt[gene] + " vs " + allele,
                                  ymin, ymax)
 
+                print (this_wt_mut_ax,
+                                 this_gctx.frame,
+                                 allele2distil_ids[gene2wt[gene]],
+                                 allele2distil_ids[allele],
+                                 gene2wt[gene] + " vs " + allele,
+                                 ymin, ymax)
+
                 # PLOT RANKPOINT ROWS
                 this_jitter_ax = plt.subplot2grid(grid_size,
                                                   (2, col_counter))
@@ -356,6 +366,167 @@ def main():
         plt.close(this_fig)
 
     sys.exit(0)
+
+def eVIP_run_main(pred_file=None, sig_info =None, gctx=None,
+            sig_gctx = None, ref_allele_mode = None, null_conn = None,
+            out_dir = None,ymin = None, ymax= None, allele_col = None,  use_c_pval = None,
+            pdf = None, cell_id = None, plate_id =  None, corr_val_str = None):
+
+
+    #setting default values
+    ymin = int(ymin) if ymin != None else int(-100)
+    ymax = int(ymax) if ymax != None else int(100)
+
+
+
+    pred_file = open(pred_file)
+    pred_col = DEF_PRED_COL
+
+    if os.path.exists(out_dir):
+        out_dir = os.path.abspath(out_dir)
+    else:
+        os.mkdir(out_dir)
+        out_dir = os.path.abspath(out_dir)
+        print "Creating output directory: %s" % out_dir
+
+    sig_info = open(sig_info)
+    null_conn = getNullConnDist(null_conn)
+
+    this_gctx = gct.GCT(gctx)
+    this_gctx.read()
+
+    sig_gctx = gct.GCT(sig_gctx)
+    sig_gctx.read()
+
+    (gene2wt,
+     gene2allele_call,
+     gene2num_alleles,
+     allele2pvals) = parse_pred_file(pred_file, pred_col, use_c_pval,
+                                     ref_allele_mode)
+
+
+    allele2distil_ids = parse_sig_info( sig_info, allele_col, cell_id, plate_id)
+
+    for gene in gene2wt:
+
+        this_fig = plt.figure()
+        this_fig.set_size_inches((gene2num_alleles[gene]+1)*4,
+                                  4*3)
+
+        grid_size = (4, gene2num_alleles[gene] + 1)
+
+        wt_heatmap_ax = plt.subplot2grid(grid_size, (0,0))
+        wt_im = plot_rep_heatmap(wt_heatmap_ax,
+                         this_gctx.frame,
+                         allele2distil_ids[gene2wt[gene]],
+                         allele2distil_ids[gene2wt[gene]],
+                         gene2wt[gene],
+                         ymin, ymax)
+
+        # WT self connectivity
+        wt_self, wt_self_row_medians = getSelfConnectivity(this_gctx,
+                                                           allele2distil_ids[gene2wt[gene]],
+                                                           len(allele2distil_ids[gene2wt[gene]]))
+
+        # Create consistent x values for the wt reps when plotting
+        wt_x_vals = []
+        for val in wt_self_row_medians:
+            wt_x_vals.append(random.randint(WT_RANGE[0], WT_RANGE[1]))
+
+        # Plot color bar on this axis
+        plt.colorbar(wt_im, ax=wt_heatmap_ax, shrink=0.7)
+
+        # Plot allele data
+        col_counter = 1
+
+        for type in PRED_TYPE:
+            for allele in gene2allele_call[gene][type]:
+
+                # CREATE SCATTERPLOT FIGURE
+                plot_signatures(pdf, out_dir,
+                                sig_gctx.frame,
+                                gene2wt[gene],
+                                allele,
+                                allele2distil_ids[gene2wt[gene]],
+                                allele2distil_ids[allele])
+
+                # PLOT HEATMAP
+                this_hm_ax = plt.subplot2grid(grid_size,
+                                             (0, col_counter))
+
+
+
+                plot_rep_heatmap(this_hm_ax,
+                                 this_gctx.frame,
+                                 allele2distil_ids[allele],
+                                 allele2distil_ids[allele],
+                                 type + " - " + allele,
+                                 ymin, ymax)
+
+
+
+                # PLOT WT MUT heatmap
+                this_wt_mut_ax = plt.subplot2grid(grid_size,
+                                                  (1, col_counter))
+
+
+                plot_rep_heatmap(this_wt_mut_ax,
+                                 this_gctx.frame,
+                                 allele2distil_ids[gene2wt[gene]],
+                                 allele2distil_ids[allele],
+                                 gene2wt[gene] + " vs " + allele,
+                                 ymin, ymax)
+
+
+                # PLOT RANKPOINT ROWS
+                this_jitter_ax = plt.subplot2grid(grid_size,
+                                                  (2, col_counter))
+
+                mut_self, mt_self_row_medians = getSelfConnectivity(this_gctx,
+                                                                    allele2distil_ids[allele],
+                                                                    len(allele2distil_ids[allele]))
+                wt_mut, wt_mut_row_medians = getConnectivity(this_gctx,
+                                                             allele2distil_ids[gene2wt[gene]],
+                                                             allele2distil_ids[allele],
+                                                             len(allele2distil_ids[allele]))
+
+                plot_jitter(this_jitter_ax,
+                            col_counter,
+                            wt_x_vals,
+                            wt_self_row_medians,
+                            mt_self_row_medians,
+                            wt_mut_row_medians,
+#                            null_x_vals,
+#                            null_conn,
+                            allele2pvals[allele][0],
+                            allele2pvals[allele][1],
+                            use_c_pval,
+                            ymin, ymax,
+                            corr_val_str)
+
+
+                # Compared to random connectivity
+                conn_ax = plt.subplot2grid(grid_size,
+                                           (3, col_counter))
+
+                plot_conn(conn_ax,
+                          col_counter,
+                          null_conn,
+                          wt_mut_row_medians,
+                          allele2pvals[allele][2],
+                          use_c_pval,
+                          corr_val_str)
+
+                col_counter += 1
+
+        if pdf:
+            this_fig.savefig("%s/%s_impact_pred_plots.pdf" % (out_dir, gene),
+                             format="pdf")
+        else:
+            this_fig.savefig("%s/%s_impact_pred_plots.png" % (out_dir, gene))
+        plt.close(this_fig)
+
+    #sys.exit(0)
 
 ############
 # END_MAIN #
