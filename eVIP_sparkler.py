@@ -253,6 +253,7 @@ def main():
     all_col = []
     all_diff_score = []
     all_markerstyle = []
+    predictions = ["GOF", "LOF", "COF", "Neutral"]
 
     for gene in gene2allele:
 
@@ -352,7 +353,7 @@ def main():
                 ha="center")
 
 
-        predictions = ["GOF", "LOF", "COF", "Neutral"]
+        # predictions = ["GOF", "LOF", "COF", "Neutral"]
         colors = [GOF_COL, LOF_COL, COF_COL, "black"]
 
         recs = []
@@ -489,7 +490,7 @@ def main():
     sys.exit(0)
 
 
-def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=None, use_c_pval=None,
+def eVIP_run_main(pred_file=None, ref_allele_mode=None, y_thresh=None, x_thresh=None, use_c_pval=None,
                   annotate=None, by_gene_color=None, pdf=None, xmin=None, xmax=None, ymin=None, ymax=None,
                   out_dir=None):
     x_thresh = float(x_thresh)
@@ -534,6 +535,8 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=
      gene2markerstyle) = parse_pred_file(pred_file, x_thresh, y_thresh,
                                          pred_col, use_c_pval, gene2type, ref_allele_mode, xmax, ymax)
 
+
+
     if gene2type:
         # Print out gene type and prediction counts
         for gene_type in gene_type2pred2count:
@@ -567,6 +570,8 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=
     all_col = []
     all_diff_score = []
     all_markerstyle = []
+    recs = []
+    predictions = ["GOF", "LOF", "COF", "Neutral"]
 
     for gene in gene2allele:
 
@@ -581,6 +586,7 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=
         all_col.extend(gene2col[gene])
         all_diff_score.extend(gene2diff_score[gene])
         all_markerstyle.extend(gene2markerstyle[gene])
+
 
         if gene not in gene2type:
             gene2type[gene] = "UNKN"
@@ -663,7 +669,6 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, x_thresh=None, y_thresh=
         predictions = ["GOF", "LOF", "COF", "Neutral"]
         colors = [GOF_COL, LOF_COL, COF_COL, "black"]
 
-        recs = []
         for i in range(len(colors)):
             recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=colors[i]))
 

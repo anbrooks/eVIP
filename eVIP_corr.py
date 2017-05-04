@@ -1,28 +1,32 @@
 #!/usr/bin/python
-
 import argparse
 import numpy as np
 import pandas as pd
 from scipy import stats
 import rpy2.robjects as robjects
+import os
 
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-input", help="Input txt file (filtered and log transformed data")
-    parser.add_argument("-zscore_input", help="Optional z score input txt file (spearman rank correlations will be calculated from this file)")
-    parser.add_argument("-z_output", help="Name of output file containing zscores")
-    parser.add_argument("-sp_output", required=True, help="Name of output file containing spearman rank correlations")
+    parser.add_argument("-zscore_gct", help="Z-score input gct file (spearman rank correlations will be calculated from this file)")
+    parser.add_argument("-out_dir", help = "Directory for output files")
 
     args = parser.parse_args()
 
     #if the input is gene expression data
     if args.input != None:
+        if not os.path.exists(args.out_dir):
+            os.makedirs(args.out_dir)
+
         input_file = open(args.input, "r")
-        z_output_file = open(args.z_output+".gct", "w+")
-        sp_output = open(args.sp_output + ".gct", "w")
-        sp_output.writelines("#1.3" + "\n")
+        z_output_file = open(args.out_dir+"z_scores.gct", "w+")
         z_output_file.writelines("#1.3" + "\n")
+        sp_output = open(args.out_dir + "spearman_rank_matrix.gct", "w")
+        sp_output.writelines("#1.3" + "\n")
+
+        #formatting header and gct files
         for line in open(args.input,"r"):
             line = formatLine(line)
             ncols = (str(len(line.split())))
@@ -37,121 +41,144 @@ def main():
                 z_output_file.write(header)
                 continue
 
-
+        #calculating z_scores
         z_outlines = calcZscore(open(args.input, "r"))
 
+        #writing z_scores to output file
         for outline in z_outlines:
             z_output_file.write(outline)
 
-
-
-        file_path = args.z_output +".gct"
-
+        #importing zscores as matrix
+        file_path = args.out_dir+"z_scores.gct"
         data = pd.read_csv(file_path, delimiter="\t", skiprows=2, index_col=False)
         column_name = 'id'
         data = data.drop(column_name, axis=1)
 
+        #calculating spearman rank correlation
         sp_matrix = (stats.spearmanr(data))
 
         #writing matrix to output file
         matrixToFile(sp_matrix, sp_output, header)
 
     #if the input is zscores
-    if args.zscore_input:
-        zscore_input = open(args.zscore_input, "r")
+    if args.zscore_gct:
+        if not os.path.exists(args.out_dir):
+            os.makedirs(args.out_dir)
 
-        data = np.loadtxt(strip_first_col(args.zscore_input), skiprows=1)
+        # shutil.copy(args.zscore_gct, args.out_dir+"z_scores.gct")
+        zscore_input = open(args.zscore_gct, "r")
+
+        #importing zscores as a matrix
+        data = np.loadtxt(strip_first_col(args.zscore_gct, "\t"), skiprows=3)
+
+        #calculating spearman rank correlation
         sp_matrix = (stats.spearmanr(data))
 
-        sp_output = open(args.sp_output+".gct", "w")
+        #beggining gct file format
+        sp_output = open(args.out_dir+"/spearman_rank_matrix.gct", "w")
         sp_output.writelines("#1.3" + "\n")
 
         header = None
+        ncols = None
 
         #getting the header and creating gct format
         for line in zscore_input:
             line = formatLine(line)
             ncols = (str(len(line.split())))
-            if line.startswith("#"):
+            if line.startswith("id"):
                 header = line
                 header += "\n"
                 ncol_vals = int(ncols) - 1
                 sp_output.write(str(ncol_vals) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
-                header = header.replace("#gene_id", "id")
                 sp_output.write(header)
 
 
         # writing matrix to output file
         matrixToFile(sp_matrix, sp_output, header)
 
-def run_main(input=None, zscore_input=None, z_output=None, sp_output=None):
-
+def run_main(input=None, zscore_gct=None, out_dir=None):
     # if the input is gene expression data
-
     if input != None:
-        input_file = open(input, "r")
-        z_output_file = open(z_output + ".gct", "w+")
-        sp_output = open(sp_output + ".gct", "w")
-        sp_output.writelines("#1.3" + "\n")
-        z_output_file.writelines("#1.3" + "\n")
 
-        for line in input_file:
+        with open(input,"r") as input_file:
+            z_output_file = open(out_dir + "/z_scores.gct", "w+")
+            sp_output = open(out_dir + "/spearman_rank_matrix.gct", "w")
+            sp_output.writelines("#1.3" + "\n")
+            z_output_file.writelines("#1.3" + "\n")
+            for line in input_file:
+                line = formatLine(line)
+                ncols = (str(len(line.split())))
+                if line.startswith("#gene_id"):
+                    header = line
+                    header += "\n"
+                    ncol_vals = int(ncols) - 1
+                    z_output_file.write(str(getLineCount(input_file)) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
+                    sp_output.write(str(ncol_vals) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
+                    header = header.replace("#gene_id", "id")
+                    sp_output.write(header)
+                    z_output_file.write(header)
+
+            z_outlines = calcZscore(open(input, "r"))
+
+            for outline in z_outlines:
+                z_output_file.write(outline)
+
+        file_path = out_dir + "/z_scores.gct"
+
+        z_output_file.close()
+
+        data = pd.read_csv(file_path, delimiter="\t", skiprows=2, index_col=False)
+
+        column_name = 'id'
+        data = data.drop(column_name, axis=1)
+        sp_matrix = (stats.spearmanr(data))
+
+        #writing matrix to output file
+        matrixToFile(sp_matrix[0], sp_output, header)
+
+
+    # if the input is zscores
+    elif zscore_gct != None:
+
+        # zscore_copy = out_dir+"/z_scores.gct"
+        # shutil.copy(zscore_gct,zscore_copy)
+
+        sp_output = open(out_dir + "/spearman_rank_matrix.gct", "w")
+        sp_output.writelines("#1.3" + "\n")
+
+        # data = pd.read_csv(zscore_copy, delimiter="\t", skiprows=2, index_col=False)
+        # column_name = 'id'
+        # data = data.drop(column_name, axis=1)
+        # sp_matrix = (stats.spearmanr(data))
+
+        zscores = open(zscore_gct, "r")
+        ncols = None
+        header = None
+
+        #getting the header and creating gct format
+        for line in zscores:
             line = formatLine(line)
             ncols = (str(len(line.split())))
-            if line.startswith("#"):
+            if line.startswith("id") :
                 header = line
                 header += "\n"
                 ncol_vals = int(ncols) - 1
-                z_output_file.write(str(getLineCount(input_file)) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
                 sp_output.write(str(ncol_vals) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
-                header = header.replace("#gene_id", "id")
                 sp_output.write(header)
-                z_output_file.write(header)
                 continue
 
-        z_outlines = calcZscore(open(input, "r"))
+        zscores.close()
 
-        for outline in z_outlines:
-            z_output_file.write(outline)
-
-        file_path = z_output + ".gct"
-
-        data = pd.read_csv(file_path, delimiter="\t", skiprows = 2, index_col=False)
+        data = pd.read_csv(zscore_gct, delimiter="\t", skiprows=2, index_col=False)
         column_name = 'id'
         data = data.drop(column_name, axis=1)
 
         sp_matrix = (stats.spearmanr(data))
 
-        # #writing matrix to output file
-        matrixToFile(sp_matrix, sp_output, header)
-
-
-    # if the input is zscores
-    elif zscore_input != None:
-        zscores = open(zscore_input, "r")
-
-        data = np.loadtxt(strip_first_col(zscore_input), skiprows=1)
-        sp_matrix = (stats.spearmanr(data))
-
-        sp_output = open(sp_output + ".gct", "w")
-        sp_output.writelines("#1.3" + "\n")
-
-        header = None
-
-        # getting the header and creating gct format
-        for line in zscores:
-            line = formatLine(line)
-            ncols = (str(len(line.split())))
-            if line.startswith("#"):
-                header = line
-                header += "\n"
-                ncol_vals = int(ncols) - 1
-                sp_output.write(str(ncol_vals) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
-                header = header.replace("#gene_id", "id")
-                sp_output.write(header)
 
         # writing matrix to output file
-        matrixToFile(sp_matrix, sp_output, header)
+        matrixToFile(sp_matrix[0], sp_output, header)
+        sp_output.close()
 
 
 #############
@@ -177,15 +204,16 @@ def strip_first_col(fname, delimiter=None):
 
 def matrixToFile(matrix, output_file, header):
     n=1
-    for line in matrix[0]:
+    for line in matrix:
         sp_line = np.ndarray.tolist(line)
         header_list = header.split("\t")
         sp_line.insert(0, header_list[n])
-        for i in sp_line:
-            output_file.write(str(i).replace("\n", ""))
-            if i != sp_line[-1]:
+        for i, value in enumerate(sp_line):
+            output_file.write(str(value).replace("\n", ""))
+            if i != len(sp_line)-1 :
                 output_file.write("\t")
-        output_file.write("\n")
+            else:
+                output_file.write("\n")
         n += 1
 
 def calcZscore(input_file):
@@ -233,6 +261,7 @@ def calcZscore(input_file):
         z_outlines.append(z_outline)
 
     return z_outlines
+
 
 #################
 # END FUNCTIONS #

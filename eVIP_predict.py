@@ -222,15 +222,18 @@ def main():
     # Output distribution files
     controls = grp.read_grp(options.controls_file)
 
+
     reference_test_filename = options.reference_test_file
     ref2test_allele = None
     if reference_test_filename:
         ref2test_allele = parseRefTestFile(reference_test_filename)
 
+
     allele_col = options.allele_col
 
     this_gctx = gct.GCT(options.gctx)
     this_gctx.read()
+
 
     num_iterations = options.num_iterations
     num_reps = options.num_reps
@@ -271,12 +274,15 @@ def main():
         if this_control in allele2distil_id:
             clean_controls.append(this_control)
 
+
     if not conn_null_input:
         replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
                                                               allele2distil_id,
                                                               clean_controls,
                                                               num_iterations,
                                                               num_reps)
+
+
 
     if conn_null_input:
         connectivity_null_dist = conn_nulls_from_input
@@ -413,7 +419,7 @@ def main():
 
 def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=None, conn_null=None,
                   allele_col=None,
-                  ie_col=None, ie_filter=None, cell_id=None, plate_id=None,
+                  ie_filter=None, ie_col=None,  cell_id=None, plate_id=None,
                   i=None, num_reps=None, mut_wt_rep_thresh=None,
                   disting_thresh=None, mut_wt_rep_rank_diff=None, use_c_pval=None):
 
@@ -452,8 +458,10 @@ def eVIP_run_main(sig_info=None, o=None, c=None, r=None, gctx=None, conn_thresh=
     if reference_test_filename:
         ref2test_allele = parseRefTestFile(reference_test_filename)
 
+
     this_gctx = gct.GCT(gctx)
     this_gctx.read()
+
 
     num_iterations = i
     c_thresh = conn_thresh
@@ -769,6 +777,10 @@ def getNullDist(this_gctx, allele2distil_id, controls,
         rank_pts = []
         for i in range(1, num_reps):
             rank_pts.append(float(this_gctx.frame[control_distil_ids[0]][control_distil_ids[i]]))
+
+
+
+
 
 
         rep_null_dist.append(numpy.percentile(rank_pts, 50))

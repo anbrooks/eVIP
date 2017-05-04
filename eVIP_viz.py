@@ -229,6 +229,7 @@ def main():
     this_gctx = gct.GCT(options.gctx)
     this_gctx.read()
 
+
     sig_gctx = gct.GCT(options.sig_gctx)
     sig_gctx.read()
 
@@ -310,12 +311,6 @@ def main():
                                  gene2wt[gene] + " vs " + allele,
                                  ymin, ymax)
 
-                print (this_wt_mut_ax,
-                                 this_gctx.frame,
-                                 allele2distil_ids[gene2wt[gene]],
-                                 allele2distil_ids[allele],
-                                 gene2wt[gene] + " vs " + allele,
-                                 ymin, ymax)
 
                 # PLOT RANKPOINT ROWS
                 this_jitter_ax = plt.subplot2grid(grid_size,
@@ -396,7 +391,9 @@ def eVIP_run_main(pred_file=None, sig_info =None, gctx=None,
     this_gctx.read()
 
     sig_gctx = gct.GCT(sig_gctx)
+
     sig_gctx.read()
+
 
     (gene2wt,
      gene2allele_call,
