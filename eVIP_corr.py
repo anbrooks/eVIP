@@ -34,7 +34,8 @@ def main():
                 header = line
                 header += "\n"
                 ncol_vals = int(ncols) - 1
-                z_output_file.write(str(getLineCount(input_file)) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
+                line_count = getLineCount(input_file)
+                z_output_file.write(str(line_count-1) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
                 sp_output.write(str(ncol_vals) + "\t" + str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
                 header = header.replace("#gene_id", "id")
                 sp_output.write(header)
@@ -58,14 +59,13 @@ def main():
         sp_matrix = (stats.spearmanr(data))
 
         #writing matrix to output file
-        matrixToFile(sp_matrix, sp_output, header)
+        matrixToFile(sp_matrix[0], sp_output, header)
 
     #if the input is zscores
     if args.zscore_gct:
         if not os.path.exists(args.out_dir):
             os.makedirs(args.out_dir)
 
-        # shutil.copy(args.zscore_gct, args.out_dir+"z_scores.gct")
         zscore_input = open(args.zscore_gct, "r")
 
         #importing zscores as a matrix
@@ -94,7 +94,7 @@ def main():
 
 
         # writing matrix to output file
-        matrixToFile(sp_matrix, sp_output, header)
+        matrixToFile(sp_matrix[0], sp_output, header)
 
 def run_main(input=None, zscore_gct=None, out_dir=None):
     # if the input is gene expression data
@@ -135,6 +135,8 @@ def run_main(input=None, zscore_gct=None, out_dir=None):
 
         #writing matrix to output file
         matrixToFile(sp_matrix[0], sp_output, header)
+
+        sp_output.close()
 
 
     # if the input is zscores
@@ -201,6 +203,8 @@ def strip_first_col(fname, delimiter=None):
                 yield line.split(delimiter, 1)[1]
             except IndexError:
                 continue
+
+
 
 def matrixToFile(matrix, output_file, header):
     n=1

@@ -9,6 +9,8 @@ import eVIP_corr
 import eVIP_predict
 import eVIP_sparkler
 import eVIP_viz
+import eVIP_compare
+import eVIP_predict_OG
 from csv import DictWriter
 
 #
@@ -146,6 +148,7 @@ def main(infile=None, zscore_gct = None, out_directory=None, sig_info =None, c=N
                       args.xmax, args.ymin, args.ymax, args.viz_ymin, args.viz_ymax, args.corr_val)
 
 
+
         summarize(pathway_list)
 
 
@@ -178,13 +181,30 @@ def run_eVIP(infile=None, zscore_gct = None, out_directory=None, sig_info =None,
     print('calculating correlations...')
     run_corr = eVIP_corr.run_main(input=infile,zscore_gct=zscore_gct, out_dir= out_directory)
 
-    #run eVIP_predict.py
+    print('comparing...')
+    run_compare = eVIP_compare.run_main(sig_info=sig_info, gctx = out_directory+"/spearman_rank_matrix.gct",
+                allele_col = args.allele_col, o= out_directory+"/compare", r = args.r,
+             c = args.c, i = args.i, conn_null = args.conn_null, ie_col = args.ie_col,
+             ie_filter = args.ie_filter, num_reps = args.num_reps, cell_id = args.cell_id, plate_id = args.plate_id)
+
+
     print('predicting...')
-    run_predict = eVIP_predict.eVIP_run_main(sig_info= sig_info, o= out_directory+"/predict",c= args.c,r=args.r,
-        gctx= out_directory+"/spearman_rank_matrix.gct", conn_thresh=args.conn_thresh, conn_null = args.conn_null,
-        allele_col = args.allele_col, ie_filter=args.ie_filter, ie_col=args.ie_col, cell_id = args.cell_id,
-        plate_id = args.plate_id, i=args.i, num_reps = args.num_reps, mut_wt_rep_thresh = args.mut_wt_rep_thresh,
-        disting_thresh = args.disting_thresh, mut_wt_rep_rank_diff = args.mut_wt_rep_rank_diff, use_c_pval=args.use_c_pval)
+    run_predict = eVIP_predict_OG.run_main(i= out_directory+"/compare.txt", o= out_directory+"/predict", conn_thresh=args.conn_thresh,
+                mut_wt_rep_thresh=args.mut_wt_rep_thresh, mut_wt_rep_rank_diff=args.mut_wt_rep_rank_diff,
+                disting_thresh=args.disting_thresh, use_c_pval=args.use_c_pval)
+
+
+
+
+    #
+    # #run eVIP_predict.py
+    # print('predicting...')
+    # run_predict = eVIP_predict.eVIP_run_main(sig_info= sig_info, o= out_directory+"/predict",c= args.c,r=args.r,
+    #     gctx= out_directory+"/spearman_rank_matrix.gct", conn_thresh=args.conn_thresh, conn_null = args.conn_null,
+    #     allele_col = args.allele_col, ie_filter=args.ie_filter, ie_col=args.ie_col, cell_id = args.cell_id,
+    #     plate_id = args.plate_id, i=args.i, num_reps = args.num_reps, mut_wt_rep_thresh = args.mut_wt_rep_thresh,
+    #     disting_thresh = args.disting_thresh, mut_wt_rep_rank_diff = args.mut_wt_rep_rank_diff, use_c_pval=args.use_c_pval, eVIPP=args.eVIPP)
+
 
     #run eVIP_sparkler.py
     print "making sparkler plots..."
@@ -196,7 +216,7 @@ def run_eVIP(infile=None, zscore_gct = None, out_directory=None, sig_info =None,
     #run eVIP_viz.py
     print "making visualizations..."
     run_viz = eVIP_viz.eVIP_run_main(pred_file= out_directory+"/predict.txt", sig_info = args.sig_info, gctx=out_directory+"/spearman_rank_matrix.gct",
-            sig_gctx = sig_gctx_val, ref_allele_mode = args.ref_allele_mode, null_conn = out_directory+"/predict_conn_null.txt",
+            sig_gctx = sig_gctx_val, ref_allele_mode = args.ref_allele_mode, null_conn = out_directory+"/compare_conn_null.txt",
             out_dir = out_directory+"/viz",ymin = args.viz_ymin, ymax= args.viz_ymax, allele_col = args.allele_col, use_c_pval = args.use_c_pval,
              pdf = args.pdf, cell_id = args.cell_id, plate_id = args.plate_id, corr_val_str= args.corr_val)
 
@@ -279,6 +299,7 @@ def kegg_to_ensembl_list(hsa_num):
 def gene_extraction_z(ensembl_list, data, output):
 # this function extracts the pathway genes from the RNA-seq data
     matched_ids = []
+
     header = None
     ncols = None
     ncol_vals = None
@@ -291,6 +312,7 @@ def gene_extraction_z(ensembl_list, data, output):
                 matched_ids.append(id)
 
         ncols = (str(len(line.split())))
+
         if line.startswith("id"):
             header = line
             ncol_vals = int(ncols)-1
@@ -304,11 +326,12 @@ def gene_extraction_z(ensembl_list, data, output):
 
     output.write("#1.3\n")
     output.write(str(len(matched_ids)) +"\t" +str(ncol_vals) + "\t" + "0" + "\t" + "0" + "\n")
+
+
     output.write(header+"\n")
     for outline in outlines:
         output.write(outline)
 
-    global matched_length_list
     matched_length = str(len(matched_ids))
     ensembl_length = str(len(ensembl_list))
     print matched_length + " of " + ensembl_length + " IDs were found in the data. "
@@ -364,7 +387,7 @@ def summarize(pathway_list):
                 splitLine = line.split()
                 mut_list.append(str(splitLine[1]))
 
-    header = "pathway" + "\t" + ("\t").join(mut_list) + "\t" + "num_genes" + "\n"
+    header = "pathway" + "\t" + ("\t").join(mut_list) + "\n"
     summary_file.write(header)
 
     for pathway in pathway_list:
@@ -376,15 +399,17 @@ def summarize(pathway_list):
                     splitLine = line.split()
                     pred_list.append(splitLine[13])
 
-        num_lines_in_zscore = sum(1 for line in open(out_dir + "/" + pathway + "_eVIPP_outputs/z_scores.gct"))
+        # num_lines_in_zscore = sum(1 for line in open(out_dir + "/" + pathway + "_eVIPP_outputs/z_scores.gct"))
 
-        # summary_file.write(pathway + "\t" + ("\t").join(pred_list)+"\n")
+        summary_file.write(pathway + "\t" + ("\t").join(pred_list)+"\n")
 
-        summary_file.write(pathway + "\t" + ("\t").join(pred_list)+ "\t" + str(num_lines_in_zscore-3)+"\n")
-
+        # summary_file.write(pathway + "\t" + ("\t").join(pred_list)+ "\t" + str(num_lines_in_zscore-3)+"\n")
 
         #clearing predict list
         pred_list = []
+
+
+
 
 
 #################
