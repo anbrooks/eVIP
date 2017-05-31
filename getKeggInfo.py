@@ -1,49 +1,60 @@
-import argparse
-import urllib2
-import sys
 import mygene
-import os
+import urllib2
+import argparse
+import json
 
-########
-# MAIN #
-########
+#this script gets a current list of pathways available in kegg
+#gets the official gene names of each gene in each pathway
+#and also converts the official gene names into ensembl ids
+
+##########
+#  MAIN  #
+##########
 def main():
-
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-hsa_num", help="kegg pathway number, for running eVIP on a single pathway")
-    parser.add_argument("-hsa_list", help="file containing a list of kegg pathway numbers, for running eVIP on several pathways at once ")
-    parser.add_argument("-data_file", help="file with data to extract pathway genes from")
-    parser.add_argument("-o", help = "name of output directory to create")
-
+    parser.add_argument("-out", required=True, help="name of output json file that will contain kegg pathway data taken")
     args = parser.parse_args()
 
-    hsa_num = args.hsa_num
-    hsa_list = open(args.hsa_list, "r")
-    data = open(args.data_file, "r")
+    unique_list = []
+    all_kegg_pathways = []
+    gene_dict_list = []
+    pway_gene_dict ={}
 
-    #make eVIP output directory
-    out_dir = args.o
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+    #opening kegg sie with pathway info
+    response = urllib2.urlopen('http://rest.kegg.jp/link/hsa/pathway').read()
 
-    if hsa_num:
-        #run on the one pathway
-        kegg_to_data(hsa_num)
+    for item in response.strip().split("\n"):
+        line = item.split()
+        if line[0] in unique_list:
+            pass
+        else:
+            unique_list.append(line[0])
 
-    if hsa_list:
-        pathway_list = []
-        for line in hsa_list:
-            pathway_list.append(line.strip())
+    #reformatting the pathway names
+    for item in unique_list:
+        new_item= item.replace("path:", "")
+        all_kegg_pathways.append(new_item)
 
-        for pathway in pathway_list:
-            out_file = open(out_dir + "/" +pathway +".txt", "w")
-            ensembl_list = kegg_to_ensembl_list(pathway)
-            gene_extraction(ensembl_list, open(args.data_file), out_file)
+
+    #creating dict with each pathway and its genes in ensembl id
+
+    # short_pways = ['hsa01100', 'hsa04141', 'hsa00010']
+
+    for pway in all_kegg_pathways:
+        pway_gene_dict[pway] = kegg_to_ensembl_list(pway)
+
+    print pway_gene_dict
+
+    #writing to file
+    with open(args.out, "wb") as out_file:
+        json.dump(pway_gene_dict, out_file)
+
+
 
 ############
-# END_MAIN #
+# END MAIN #
 ############
+
 
 #############
 # FUNCTIONS #
@@ -53,8 +64,10 @@ def kegg_to_ensembl_list(hsa_num):
     #this function takes a kegg pathway number, finds the genes present in the pathway,
     #and converts the genes to ensembl ids
 
+    hsa_num = str(hsa_num.strip('"'))
+
     #saving kegg website data
-    response = urllib2.urlopen('http://rest.kegg.jp/get/'+hsa_num).read()
+    response = urllib2.urlopen('http://rest.kegg.jp/get/'+(hsa_num.strip('"'))).read()
 
     ##parsing the kegg site
 
@@ -64,7 +77,7 @@ def kegg_to_ensembl_list(hsa_num):
 
     #finding the indices
 
-    check_points = ('COMPOUND','REFERENCE')
+    check_points = ('COMPOUND','REFERENCE','KO_PATHWAY')
 
     for index, item in enumerate(response.split()):
         if item == 'GENE':
@@ -77,6 +90,11 @@ def kegg_to_ensembl_list(hsa_num):
     print "\n"
     print "Pathway:"
     print hsa_num
+
+    if len(gene_idx_range) == 1:
+        print "No genes in pathway."
+        return
+
 
     #segmenting the data based off the start and end indices
     kegg_items = (response.split()[gene_idx_range[0]:gene_idx_range[1]])
@@ -122,31 +140,8 @@ def kegg_to_ensembl_list(hsa_num):
 
     return ensembl_list
 
-
-
-def gene_extraction(ensembl_list, data, output):
-# this function extracts the pathway genes from the RNA-seq data
-    matched_ids = []
-    for line in data:
-        if line.startswith("#"):
-            output.write(line)
-        line = line.split()
-        for id in ensembl_list:
-            #if id ==line[0]
-            if line[0].startswith(id):
-                matched_ids.append(id)
-                output.write("\t".join(line) + "\n")
-
-
-    matched_length = str(len(matched_ids))
-    ensembl_length = str(len(ensembl_list))
-    print matched_length + " of " + ensembl_length + " IDs were found in the data. "
-
-
-
 #################
 # END FUNCTIONS #
 #################
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
