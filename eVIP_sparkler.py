@@ -17,7 +17,9 @@ import csv
 import random
 import math
 
-from eVIP_predict import getSelfConnectivity, getConnectivity, max_diff
+from eVIP_predict import max_diff
+from eVIP_compare import getSelfConnectivity, getConnectivity
+
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches

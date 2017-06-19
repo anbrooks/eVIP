@@ -18,7 +18,7 @@ import pdb
 import csv
 import random
 
-from eVIP_predict import getSelfConnectivity, getConnectivity
+from eVIP_compare import getSelfConnectivity, getConnectivity
 
 import matplotlib.pyplot as plt
 import numpy as np

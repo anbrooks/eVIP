@@ -135,12 +135,12 @@ def main():
                           type="int",
                           help="Number of iterations to run. DEF=%d" % NUM_ITERATIONS,
                           default=NUM_ITERATIONS)
-    opt_parser.add_option("--rep_null",
-                          dest="rep_null_input",
-                          type="string",
-                          help="""Optional file containing rep null values from a previous
-                                  run. Should end in _rep_null.txt""",
-                          default=None)
+    # opt_parser.add_option("--rep_null",
+    #                       dest="rep_null_input",
+    #                       type="string",
+    #                       help="""Optional file containing rep null values from a previous
+    #                               run. Should end in _rep_null.txt""",
+    #                       default=None)
     opt_parser.add_option("--conn_null",
                           dest="conn_null_input",
                           type="string",
@@ -209,12 +209,12 @@ def main():
     ie_col = options.ie_col
     ie_filter = options.ie_filter
 
-    rep_null_input = options.rep_null_input
+    # rep_null_input = options.rep_null_input
     conn_null_input = options.conn_null_input
 
-    if rep_null_input:
-        rep_nulls_from_input_str = grp.read_grp(rep_null_input)
-        rep_nulls_from_input = map(float, rep_nulls_from_input_str)
+    # if rep_null_input:
+    #     rep_nulls_from_input_str = grp.read_grp(rep_null_input)
+    #     rep_nulls_from_input = map(float, rep_nulls_from_input_str)
     if conn_null_input:
         conn_nulls_from_input_str = grp.read_grp(conn_null_input)
         conn_nulls_from_input = map(float, conn_nulls_from_input_str)
@@ -235,15 +235,15 @@ def main():
         if this_control in allele2distil_id:
             clean_controls.append(this_control)
 
-    if (not rep_null_input) or (not conn_null_input):
-        replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
+
+    replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
                                                               allele2distil_id,
                                                               clean_controls,
                                                               num_iterations,
                                                               num_reps)
 
-    if rep_null_input:
-        replicate_null_dist = rep_nulls_from_input
+    # if rep_null_input:
+    #     replicate_null_dist = rep_nulls_from_input
     if conn_null_input:
         connectivity_null_dist = conn_nulls_from_input
 
@@ -424,8 +424,8 @@ def run_main(sig_info=None, gctx = None, allele_col = None, o = None, r = None,
             clean_controls.append(this_control)
 
 
-    if not conn_null_input:
-        replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
+    #calculates if no inputs
+    replicate_null_dist, connectivity_null_dist = getNullDist(this_gctx,
                                                                   allele2distil_id,
                                                                   clean_controls,
                                                                   num_iterations,
@@ -433,6 +433,7 @@ def run_main(sig_info=None, gctx = None, allele_col = None, o = None, r = None,
 
 
 
+    #overwrites conn_null_dist if its an input
     if conn_null_input:
         connectivity_null_dist = conn_nulls_from_input
 
