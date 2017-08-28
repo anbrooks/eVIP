@@ -139,11 +139,11 @@ def main(infile=None, zscore_gct = None, out_directory=None, sig_info =None, c=N
         summarize_predict_files(used_pathways, summary_eVIPP_vals)
 
         #eVIPP sparkler
-
-        print "Making allele pathway sparkler plots..."
-        run_eVIPP_sparkler = eVIPP_sparkler.main(pred_file= out_dir + "/eVIPP_combined_predict_files.txt", ref_allele_mode=args.ref_allele_mode, y_thresh=args.y_thresh, x_thresh=args.x_thresh, use_c_pval=args.use_c_pval,
-                  annotate=args.annotate, by_gene_color=args.by_gene_color, pdf=args.pdf, xmin=args.xmin, xmax=args.xmax, ymin=args.ymin, ymax=args.ymax,
-                  out_dir= out_dir + "/eVIPP_sparkler_plots")
+#
+#        print "Making allele pathway sparkler plots..."
+#        run_eVIPP_sparkler = eVIPP_sparkler.main(pred_file= out_dir + "/eVIPP_combined_predict_files.txt", ref_allele_mode=args.ref_allele_mode, y_thresh=args.y_thresh, x_thresh=args.x_thresh, use_c_pval=args.use_c_pval,
+#                  annotate=args.annotate, by_gene_color=args.by_gene_color, pdf=args.pdf, xmin=args.xmin, xmax=args.xmax, ymin=args.ymin, ymax=args.ymax,
+#                  out_dir= out_dir + "/eVIPP_sparkler_plots")
 
 
 ############
