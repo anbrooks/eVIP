@@ -11779,7 +11779,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The method was orginally described in :</p>
+<p>The method was originally described in :</p>
 <p>High-throughput Phenotyping of Lung Cancer Somatic Mutations
 Berger AH, Brooks AN, Wu X, Shrestha Y, Chouinard C, Piccioni F, Bagul M, Kamburov A, Imielinski M, Hogstrom L, Zhu C, Yang X, Pantel S, Sakai R, Watson J, Kaplan N, Campbell JD, Singh S, Root DE, Narayan R, Natoli T, Lahr DL, Tirosh I, Tamayo P, Getz G, Wong B, Doench J, Subramanian A, Golub TR, Meyerson M, Boehm JS.
 Cancer Cell, Aug 8;30(2):214-28</p>
@@ -11828,7 +11828,7 @@ conda install -c https://conda.anaconda.org/mutirri blessings
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>1) <strong>eVIP_corr.py</strong> : Uses a gene expression table (should be normalized and filtered, can use filterGeneExpressionTable.py) and calculates zscores and a spearman correlation matrix.  If using  -zscore_gct, not --infile, the spearman correlation  matrix will be calculated from the inputted zscores.</p>
-<p>2) <strong>eVIP_compare.py</strong> : Uses the spearman correlation rank matrix to perform calculatins.</p>
+<p>2) <strong>eVIP_compare.py</strong> : Uses the spearman correlation rank matrix to perform calculations.</p>
 <p>3) <strong>eVIP_predict.py</strong> : Uses the  calculations in the eVIP algorithm to generate impact predictions.</p>
 <p>4+5) <strong>eVIP_viz.py</strong> and <strong>VIP_sparkler.py</strong> : visualization</p>
 <p>The options for these scripts are included in run_eVIP.py</p>
@@ -12195,7 +12195,7 @@ The  gene labels are:</p>
 
 <pre><code>TSG(tumor suppressor gene)
 ONC(oncogene)
-TSG_noTP53
+TSG_noTP53(tumor suppressor gene, not TP53)
 ONC-NEG (oncogene-negative)</code></pre>
 
 </div>
@@ -12231,7 +12231,7 @@ ONC-NEG (oncogene-negative)</code></pre>
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>When running only <strong>eVIP</strong> (no -eVIPP or -JSON option), eVIP will create a folder named "eVIP_out".
 The results file is "predict.txt" and different visualizations can be found in the  "sparkler_plots" and "viz" directories.</p>
-<p>When running <strong>eVIPP</strong> (-eVIPP and -JSON), there will be a directory called eVIP_out_JSON.
+<p>When running <strong>eVIPP</strong> (-eVIPP and -JSON), there will be a directory called "eVIP_out_JSON".
 Here, eVIP was run using only genes from the given JSON file.</p>
 <p>For each pathway from the given JSON file,  a directory  with the pathway name +"_eVIPP_outputs" will be  created and  will contain  the eVIP results for that pathway.</p>
 <p>The "eVIPP_summary.txt" file will summarize the eVIPP results. For each variant tested, it shows the pathway's eVIP prediction. The "eVIPP_combined_predict_files.txt" file contains all the results  from the individual pathway files combined into one file.</p>
