@@ -11,7 +11,7 @@ import eVIP_compare
 import itertools
 import rpy2.robjects as robjects
 import json
-import eVIPP_sparkler
+#import eVIPP_sparkler
 
 ########
 # MAIN #
