@@ -11781,7 +11781,7 @@ div#notebook {
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>The method was orginally described in :</p>
 <p>High-throughput Phenotyping of Lung Cancer Somatic Mutations
-Berger AH<em>, Brooks AN</em>, Wu X*, Shrestha Y, Chouinard C, Piccioni F, Bagul M, Kamburov A, Imielinski M, Hogstrom L, Zhu C, Yang X, Pantel S, Sakai R, Watson J, Kaplan N, Campbell JD, Singh S, Root DE, Narayan R, Natoli T, Lahr DL, Tirosh I, Tamayo P, Getz G, Wong B, Doench J, Subramanian A, Golub TR, Meyerson M, Boehm JS.
+Berger AH, Brooks AN, Wu X, Shrestha Y, Chouinard C, Piccioni F, Bagul M, Kamburov A, Imielinski M, Hogstrom L, Zhu C, Yang X, Pantel S, Sakai R, Watson J, Kaplan N, Campbell JD, Singh S, Root DE, Narayan R, Natoli T, Lahr DL, Tirosh I, Tamayo P, Getz G, Wong B, Doench J, Subramanian A, Golub TR, Meyerson M, Boehm JS.
 Cancer Cell, Aug 8;30(2):214-28</p>
 
 </div>
@@ -11827,9 +11827,9 @@ conda install -c https://conda.anaconda.org/mutirri blessings
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>1) <strong>eVIP_corr.py</strong> : Uses a gene expression table (should be normalized and filtered, can use filterGeneExpressionTable.py) and creates a spearman correlation matrix and calculates zscores.  If using  -zscore_gct, not --infile, the spearman correlation  matrix will be calculated from the inputted zscores.</p>
+<p>1) <strong>eVIP_corr.py</strong> : Uses a gene expression table (should be normalized and filtered, can use filterGeneExpressionTable.py) and calculates zscores and a spearman correlation matrix.  If using  -zscore_gct, not --infile, the spearman correlation  matrix will be calculated from the inputted zscores.</p>
 <p>2) <strong>eVIP_compare.py</strong> : Uses the spearman correlation rank matrix to perform calculatins.</p>
-<p>3) <strong>eVIP_predict.py</strong> : Uses the  calculations in the  algorithm to generate the predictions.</p>
+<p>3) <strong>eVIP_predict.py</strong> : Uses the  calculations in the eVIP algorithm to generate impact predictions.</p>
 <p>4+5) <strong>eVIP_viz.py</strong> and <strong>VIP_sparkler.py</strong> : visualization</p>
 <p>The options for these scripts are included in run_eVIP.py</p>
 <p>For eVIP pathway analysis, use <strong>-eVIPP</strong> option in run_eVIP.py. This  runs eVIP  to get functional predictions for pathways in a variant.</p>
@@ -11866,80 +11866,167 @@ conda install -c https://conda.anaconda.org/mutirri blessings
 </code></pre>
 <p>Example:</p>
 <p>python run_eVIP.py --infile /path/to/data/data_geneExp_filtered.txt -out_directory /path/to/data/eVIP_out -sig_info /path/to/data/sig.info -c /path/to/data/controls.grp -r /path/to/data/comparisons.tsv -num_reps 3 -i 100 -allele_col allele -x_thresh 1.3 -y_thresh 1.3 -by_gene_color /path/to/data/gene_label.tsv -ymin -2 -ymax 2 -corr_val "spearman"</p>
-<p>Arguments:</p>
-
-<pre><code>  -h, --help            show this help message and exit
-  --infile INFILE       Input txt file (filtered and log transformed data).
-  -zscore_gct ZSCORE_GCT
-                        Zscore input gct file (use instead of --infile)
-  -out_directory OUT_DIRECTORY
-                        Path to directory for eVIP output files
-  -sig_info SIG_INFO    sig info file with gene information and distil
-                        information
-  -c C                  .grp file containing allele names of control
-                        perturbations. If this file is given, a null will be
-                        calculated from these
-  -r R                  File explicitly indicating which comparisons to do.
-                        Assumes the file has a header and it is ignored. The
-                        first column is the reference allele and second column
-                        is test allele. If this file is not given, then the
-                        reference alleles are assumed to be WT and inferred
-                        from the allele names.
-  -num_reps NUM_REPS    Number of replicates expected for each allele. DEF=3
-  -ie_filter IE_FILTER  Threshold for infection efficiency. Any wildtype or
-                        mutant alleles having an ie below this threshold, will
-                        be removed
-  -ie_col IE_COL        Name of the column in the sig_info file with infection
-                        efficiency information. DEF=x_ie_a549
-  -i I                  Number of iterations to run. DEF=1000
-  -allele_col ALLELE_COL
-                        Column name in sig_info file that indicates the allele
-                        names.DEF=x_mutation_status
-  -conn_null CONN_NULL  Optional file containing connectivity null values from
-                        a previous run. Should end in _conn_null.txt
-  -conn_thresh CONN_THRESH
-                        P-value threshold for connectivity vs null.
-                        DEFAULT=0.05
-  -mut_wt_rep_thresh MUT_WT_REP_THRESH
-                        P-value threshold for comparison of WT and mut
-                        robustness. DEFAULT=0.05
-  -disting_thresh DISTING_THRESH
-                        P-value threshold that tests if mut and wt reps are
-                        indistinguishable from each other. DEFAULT=0.05
-  -mut_wt_rep_rank_diff MUT_WT_REP_RANK_DIFF
-                        The minimum difference in median rankpoint WT and mut
-                        to consider a difference. DEF=0
-  -use_c_pval           Will use corrected p-value instead of raw p-val
-  -cell_id CELL_ID      Optional: Will only look at signatures from this cell
-                        line. Helps to filter sig_info file.
-  -plate_id PLATE_ID    Optional: Will only look at signatures from this plate
-  -ref_allele_mode      Sparkler+Viz: Instead of organizing plots by gene,
-                        will use the wt column to determine what are the
-                        reference alleles.
-  -x_thresh X_THRESH    Sparkler: Threshold of significance
-  -y_thresh Y_THRESH    Sparkler: Threshold of impact direction
-  -annotate             Sparkler: Will add allele labels to points.
-  -by_gene_color BY_GENE_COLOR
-                        Sparkler: File containing labels and colors for gene-
-                        centric plot.
-  -pdf PDF              Sparkler + Viz: Will print plots in pdf format instead
-                        of png.
-  -xmin XMIN            Sparkler: Min value of x-axis. DEF=0
-  -xmax XMAX            Sparkler: Max value of x-axis. DEF=4
-  -ymin YMIN            Sparkler: Min value of y-axis. DEF=-3
-  -ymax YMAX            Sparkler: Min value of y-axis. DEF=3
-  -viz_ymin VIZ_YMIN    Viz: Minimum y-value of rep value. DEF=-100
-  -viz_ymax VIZ_YMAX    Viz: Maximum y-value of rep value. DEF=100
-  -corr_val CORR_VAL    Viz: String used to label the correlation value. DEF=
-                        'row median rankpoints'
-  -eVIPP                Use this option when doing pathway analysis, must also
-                        have JSON file
-  -JSON JSON            JSON file created by create_pathway_JSON.py. Contains
-                        dictionary of pathways and the associated ids
-  -min_genes MIN_GENES  Minimum amount of pathway genes found in data to run
-                        eVIPP on. DEF = 5
-  -viz_off              Will not perform eVIP viz step
-  -sparkler_off         Will not perform eVIP sparkler step</code></pre>
+<table>
+<thead><tr>
+<th>Arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-h, --help</td>
+<td>show this help message and exit</td>
+</tr>
+<tr>
+<td>--infile</td>
+<td>Input txt file (filtered and log transformed data).</td>
+</tr>
+<tr>
+<td>-zscore_gct</td>
+<td>Zscore input gct file (use instead of --infile)</td>
+</tr>
+<tr>
+<td>-out_directory</td>
+<td>Path to directory for eVIP output files</td>
+</tr>
+<tr>
+<td>-sig_info</td>
+<td>sig info file with gene information and distil information</td>
+</tr>
+<tr>
+<td>-c</td>
+<td>.grp file containing allele names of control perturbations. If this file is given, a null will be calculated from these</td>
+</tr>
+<tr>
+<td>-r</td>
+<td>File explicitly indicating which comparisons to do. Assumes the file has a header and it is ignored. The first column is the reference allele and second column is test allele. If this file is not given, then the reference alleles are assumed to be WT and inferred from the allele names.</td>
+</tr>
+<tr>
+<td>-num_reps</td>
+<td>Number of replicates expected for each allele. DEF=3</td>
+</tr>
+<tr>
+<td>-ie_filter</td>
+<td>Threshold for infection efficiency. Any wildtype or mutant alleles having an ie below this threshold, will be removed</td>
+</tr>
+<tr>
+<td>-ie_col</td>
+<td>Name of the column in the sig_info file with infection efficiency information. DEF=x_ie_a549</td>
+</tr>
+<tr>
+<td>-i</td>
+<td>Number of iterations to run. DEF=1000</td>
+</tr>
+<tr>
+<td>-allele_col</td>
+<td>Column name in sig_info file that indicates the allele names.DEF=x_mutation_status</td>
+</tr>
+<tr>
+<td>-conn_null</td>
+<td>Optional file containing connectivity null values from a previous run. Should end in _conn_null.txt</td>
+</tr>
+<tr>
+<td>-conn_thresh</td>
+<td>P-value threshold for connectivity vs null. DEFAULT=0.05</td>
+</tr>
+<tr>
+<td>-mut_wt_rep_thresh</td>
+<td>P-value threshold for comparison of WT and mut robustness. DEFAULT=0.05</td>
+</tr>
+<tr>
+<td>-disting_thresh</td>
+<td>P-value threshold that tests if mut and wt reps are indistinguishable from each other. DEFAULT=0.05</td>
+</tr>
+<tr>
+<td>-mut_wt_rep_rank_diff</td>
+<td>The minimum difference in median rankpoint WT and mut to consider a difference. DEF=0</td>
+</tr>
+<tr>
+<td>-use_c_pval</td>
+<td>Will use corrected p-value instead of raw p-val</td>
+</tr>
+<tr>
+<td>-cell_id</td>
+<td>Optional: Will only look at signatures from this cell line. Helps to filter sig_info file.</td>
+</tr>
+<tr>
+<td>-plate_id</td>
+<td>Optional: Will only look at signatures from this plate</td>
+</tr>
+<tr>
+<td>-ref_allele_mode</td>
+<td>Sparkler+Viz: Instead of organizing plots by gene,will use the wt column to determine what are the reference alleles.</td>
+</tr>
+<tr>
+<td>-x_thresh</td>
+<td>Sparkler: Threshold of significance</td>
+</tr>
+<tr>
+<td>-y_thresh</td>
+<td>Sparkler: Threshold of impact direction</td>
+</tr>
+<tr>
+<td>-annotate</td>
+<td>Sparkler: Will add allele labels to points.</td>
+</tr>
+<tr>
+<td>-by_gene_color</td>
+<td>Sparkler: File containing labels and colors for gene-centric plot.</td>
+</tr>
+<tr>
+<td>-pdf</td>
+<td>Sparkler + Viz: Will print plots in pdf format instead of png.</td>
+</tr>
+<tr>
+<td>-xmin</td>
+<td>Sparkler: Min value of x-axis. DEF=0</td>
+</tr>
+<tr>
+<td>-xmax</td>
+<td>Sparkler: Max value of x-axis. DEF=4</td>
+</tr>
+<tr>
+<td>-ymin</td>
+<td>Sparkler: Min value of y-axis. DEF=-3</td>
+</tr>
+<tr>
+<td>-ymax</td>
+<td>Sparkler: Min value of y-axis. DEF=3</td>
+</tr>
+<tr>
+<td>-viz_ymin</td>
+<td>Viz: Minimum y-value of rep value. DEF=-100</td>
+</tr>
+<tr>
+<td>-viz_ymax</td>
+<td>Viz: Maximum y-value of rep value. DEF=100</td>
+</tr>
+<tr>
+<td>-corr_val</td>
+<td>Viz: String used to label the correlation value. DEF='row median rankpoints'</td>
+</tr>
+<tr>
+<td>-eVIPP</td>
+<td>Use this option when doing pathway analysis, must also have JSON file</td>
+</tr>
+<tr>
+<td>-JSON</td>
+<td>JSON file created by create_pathway_JSON.py. Contains dictionary of pathways and the associated ids</td>
+</tr>
+<tr>
+<td>-min_genes</td>
+<td>Minimum amount of pathway genes found in data to run eVIPP on. DEF = 5</td>
+</tr>
+<tr>
+<td>-viz_off</td>
+<td>Will not perform eVIP viz step</td>
+</tr>
+<tr>
+<td>-sparkler_off</td>
+<td>Will not perform eVIP sparkler step</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
@@ -11983,8 +12070,8 @@ conda install -c https://conda.anaconda.org/mutirri blessings
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Following are examples of for an expirement looking to characterize a variant called "GENE_MUT". 
-There are 4 replicates of the "GENE_MUT"(the variant we are testing), WT gene ("GENE_WT"), and GFP (the control).</p>
+<p>Following are examples of an experiment characterizing a variant called "GENE_MUT". 
+There are 4 replicates of the variant we are testing ("GENE_MUT"), the WT gene ("GENE_WT"), and the control ("GFP").</p>
 
 </div>
 </div>
@@ -12003,8 +12090,7 @@ There are 4 replicates of the "GENE_MUT"(the variant we are testing), WT gene ("
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>An example sig_info file of an experiment for a prediction of "GENE_MUT"
-4 replicates, a GFP control</p>
+<p>An example sig_info file</p>
 
 </div>
 </div>
@@ -12128,6 +12214,30 @@ ONC-NEG (oncogene-negative)</code></pre>
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Output-Files">Output Files<a class="anchor-link" href="#Output-Files">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>When running only <strong>eVIP</strong> (no -eVIPP or -JSON option), eVIP will create a folder named "eVIP_out".
+The results file is "predict.txt" and different visualizations can be found in the  "sparkler_plots" and "viz" directories.</p>
+<p>When running <strong>eVIPP</strong> (-eVIPP and -JSON), there will be a directory called eVIP_out_JSON.
+Here, eVIP was run using only genes from the given JSON file.</p>
+<p>For each pathway from the given JSON file,  a directory  with the pathway name +"_eVIPP_outputs" will be  created and  will contain  the eVIP results for that pathway.</p>
+<p>The "eVIPP_summary.txt" file will summarize the eVIPP results. For each variant tested, it shows the pathway's eVIP prediction. The "eVIPP_combined_predict_files.txt" file contains all the results  from the individual pathway files combined into one file.</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
