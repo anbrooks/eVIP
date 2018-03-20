@@ -1,6 +1,10 @@
 # eVIP
 Expression-based variant impact phenotyping 
 
+
+Documentation can be found [here](https://alxs412.github.io/eVIP/)
+
+
 Requirements:
 <ol>
   <li>cmap/io/gct.py (https://github.com/cmap/l1ktools): Classes to interact with .gct and .gctx files. 
