@@ -16,11 +16,8 @@ import optparse
 import os
 import pdb
 import math
-
 import random
-
 import rpy2.robjects as robjects
-
 import cmap.io.gct as gct
 import cmap.io.plategrp as grp
 import numpy

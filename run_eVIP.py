@@ -3,15 +3,15 @@ import argparse
 import os
 import errno
 import csv
-import eVIP_corr
-import eVIP_predict
-import eVIP_sparkler
-import eVIP_viz
-import eVIP_compare
 import itertools
 import rpy2.robjects as robjects
 import json
-import eVIPP_sparkler
+import bin/eVIP_corr
+import bin/eVIP_predict
+import bin/eVIP_sparkler
+import bin/eVIP_viz
+import bin/eVIP_compare
+import bin/eVIPP_sparkler
 
 ########
 # MAIN #

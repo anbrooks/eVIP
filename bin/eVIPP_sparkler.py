@@ -7,10 +7,6 @@ import pdb
 import csv
 import random
 import math
-
-from eVIP_compare import getSelfConnectivity, getConnectivity
-from eVIP_predict import max_diff
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.markers as mmarkers
@@ -18,9 +14,10 @@ from matplotlib.colors import colorConverter
 import numpy as np
 import scipy.spatial.distance as distance
 import scipy.cluster.hierarchy as sch
-
 import cmap.io.gct as gct
 
+from bin/eVIP_compare import getSelfConnectivity, getConnectivity
+from bin/eVIP_predict import max_diff
 #############
 # CONSTANTS #
 #############
