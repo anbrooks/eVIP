@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import sys
 import argparse
 import os
 import errno
@@ -6,12 +7,14 @@ import csv
 import itertools
 import rpy2.robjects as robjects
 import json
-import bin/eVIP_corr
-import bin/eVIP_predict
-import bin/eVIP_sparkler
-import bin/eVIP_viz
-import bin/eVIP_compare
-import bin/eVIPP_sparkler
+
+#importing eVIP
+from bin import eVIP_corr
+from bin import eVIP_predict
+from bin import eVIP_sparkler
+from bin import eVIP_viz
+from bin import eVIP_compare
+from bin import eVIPP_sparkler
 
 ########
 # MAIN #

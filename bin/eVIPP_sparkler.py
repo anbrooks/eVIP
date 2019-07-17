@@ -16,8 +16,8 @@ import scipy.spatial.distance as distance
 import scipy.cluster.hierarchy as sch
 import cmap.io.gct as gct
 
-from bin/eVIP_compare import getSelfConnectivity, getConnectivity
-from bin/eVIP_predict import max_diff
+from eVIP_compare import getSelfConnectivity, getConnectivity
+from eVIP_predict import max_diff
 #############
 # CONSTANTS #
 #############

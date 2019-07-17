@@ -23,7 +23,7 @@ import scipy.spatial.distance as distance
 import scipy.cluster.hierarchy as sch
 import cmap.io.gct as gct
 
-from bin/eVIP_compare import getSelfConnectivity, getConnectivity
+from eVIP_compare import getSelfConnectivity, getConnectivity
 
 
 #############
