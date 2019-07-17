@@ -16,8 +16,8 @@ import pdb
 import csv
 import random
 import math
-plt.switch_backend('agg')
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import matplotlib.patches as mpatches
 import matplotlib.markers as mmarkers
 from matplotlib.colors import colorConverter
