@@ -221,10 +221,10 @@ def main():
 
     if gene2type:
         # Print out gene type and prediction counts
-        for gene_type in gene_type2pred2count:
-            print "###%s###" % gene_type
-            for pred in gene_type2pred2count[gene_type]:
-                print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
+        # for gene_type in gene_type2pred2count:
+        #     print "###%s###" % gene_type
+        #     for pred in gene_type2pred2count[gene_type]:
+        #         print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
 
 
         gene_type2data = {"ONC":{"mut_wt":[],
@@ -539,10 +539,10 @@ def eVIP_run_main(pred_file=None, ref_allele_mode=None, y_thresh=None, x_thresh=
 
     if gene2type:
         # Print out gene type and prediction counts
-        for gene_type in gene_type2pred2count:
-            print "###%s###" % gene_type
-            for pred in gene_type2pred2count[gene_type]:
-                print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
+        # for gene_type in gene_type2pred2count:
+        #     print "###%s###" % gene_type
+        #     for pred in gene_type2pred2count[gene_type]:
+        #         print "%s\t%s" % (pred, gene_type2pred2count[gene_type][pred])
 
         gene_type2data = {"ONC": {"mut_wt": [],
                                   "mut_wt_rep_p": [],

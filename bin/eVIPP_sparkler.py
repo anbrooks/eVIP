@@ -100,7 +100,8 @@ def main(pred_file=None, ref_allele_mode=None, y_thresh=None, x_thresh=None, use
     allele2diff_score,
     allele2gene,
     allele2col,
-    allele2markerstyle) = allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh,
+    allele2markerstyle,
+    allele2pathway) = allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh,
                                          pred_col, use_c_pval, allele2type, ref_allele_mode, xmax, ymax)
 
     all_mut_wt = []
@@ -163,17 +164,22 @@ def main(pred_file=None, ref_allele_mode=None, y_thresh=None, x_thresh=None, use
                          color=this_col,
                          linewidth=SPARKLER_LINEWIDTH)
 
-            if annotate:
-                for i in range(len(allele2gene[allele])):
-                    ax.annotate(allele2gene[allele][i],
-                                (allele2neg_log_p[allele][i],
-                                 allele2mut_wt_rep_p[allele][i]),
-                                textcoords='data')
 
             plt.axvline(x= x_thresh, color="grey", ls=THRESH_LS)
 
             plt.xlim(xmin, xmax)
             plt.ylim(ymin, ymax)
+
+
+            if annotate:
+                # for i in range(len(allele2gene[allele])):
+                #     ax.annotate(allele2gene[allele][i],
+                #                 (allele2neg_log_p[allele][i],
+                #                  allele2mut_wt_rep_p[allele][i]),
+                #                 textcoords='data')
+
+                for i in range(len(allele2gene[allele])):
+                    ax.annotate(allele2pathway[allele][i], (allele2neg_log_p[allele][i], allele2mut_wt_rep_p[allele][i]),rotation=15,size=8, va="bottom")
 
             if use_c_pval:
                 ax.set_xlabel("-log10(corrected p-val)")
@@ -294,6 +300,7 @@ def allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh, pred_co
     allele2gene= {}
     allele2col = {}
     allele2markerstyle = {}
+    allele2pathway = {}
 
     with open(pred_file) as csvfile:
 
@@ -308,6 +315,8 @@ def allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh, pred_co
             mut_rep = float(row["mut_rep"])
             wt_rep = float(row["wt_rep"])
             pred = row[pred_col]
+
+            pathway = row["Pathway"]
 
             # Skip NI
             if pred == "NI":
@@ -341,9 +350,14 @@ def allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh, pred_co
                 allele2gene[allele] = []
                 allele2col[allele] = []
                 allele2markerstyle[allele] = []
+                allele2pathway[allele] = []
 
             #add gene
             allele2gene[allele].append(gene)
+
+            #add Pathway
+            allele2pathway[allele].append(pathway)
+
 
             # MUT - WT
             allele2mut_wt[allele].append(mut_rep - wt_rep)
@@ -387,12 +401,12 @@ def allele_parse_eVIPP_combined_pred_file(pred_file, x_thresh, y_thresh, pred_co
                 allele2col[allele].append("yellow")
                 allele2markerstyle[allele].append(MAIN_MARKER)
 
-    return allele2mut_wt, allele2mut_wt_rep_p, allele2neg_log_p, allele2diff_score, allele2gene, allele2col, allele2markerstyle
+    return allele2mut_wt, allele2mut_wt_rep_p, allele2neg_log_p, allele2diff_score, allele2gene, allele2col, allele2markerstyle,allele2pathway
 
 
 def split_data(marker_list, x_list, y_list, col_list):
     """
-    Returns dictioaries for x, y, and colors
+    Returns dictionaries for x, y, and colors
     """
     main_markers = {"x":[],
                     "y":[],

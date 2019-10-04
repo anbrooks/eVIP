@@ -245,25 +245,27 @@ def main():
         connectivity_null_dist = conn_nulls_from_input
 
     # Print out percentiles of each null distribution
-    print "Replicate null percentiles"
-    print "2.5,5,10,50,90,95,97.5"
+    # print "Replicate null percentiles"
+    # print "2.5,5,10,50,90,95,97.5"
     rep_precentiles =  numpy.percentile(replicate_null_dist, [2.5,5,10,50,90,95,97.5])
-    if not rep_null_input:
-        rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
-        for x in replicate_null_dist:
-            rep_null_distribution_out.write("%f\n" % x)
-        rep_null_distribution_out.close()
-    print rep_precentiles
 
-    print "Connectivity null percentiles"
-    print "2.5,5,10,50,90,95,97.5"
+    # if not rep_null_input:
+
+    rep_null_distribution_out = open(options.output_file_prefix + "_rep_null.txt", "w")
+    for x in replicate_null_dist:
+        rep_null_distribution_out.write("%f\n" % x)
+    rep_null_distribution_out.close()
+    # print rep_precentiles
+
+    # print "Connectivity null percentiles"
+    # print "2.5,5,10,50,90,95,97.5"
     conn_percentiles = numpy.percentile(connectivity_null_dist, [2.5,5,10,50,90,95,97.5])
     if not conn_null_input:
         conn_null_dist_out = open(options.output_file_prefix + "_conn_null.txt", "w")
         for x in connectivity_null_dist:
             conn_null_dist_out.write("%f\n" % x)
         conn_null_dist_out.close()
-    print conn_percentiles
+    # print conn_percentiles
 
     # WT null data
     # {WT_allele:{"wt_rep": med_wt_rep,
@@ -339,12 +341,17 @@ def main():
 
         outlines.append(outline)
 
+
     # Calculate corrected pvalues
     mut_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_rep_pvals), "BH")
     wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(wt_rep_pvals), "BH")
     mut_wt_rep_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_pvals), "BH")
     mut_wt_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_conn_pvals), "BH")
     mut_wt_rep_vs_wt_mut_conn_c_pvals = robjects.r['p.adjust'](robjects.FloatVector(mut_wt_rep_vs_wt_mut_conn_pvals), "BH")
+
+
+
+
 
     # Write to file
     num_lines = len(outlines)
@@ -360,7 +367,7 @@ def main():
 
         # this_outline += "%f\t" % wt_rep_c_pvals[wt_idx]
 
-        this_outline += "%f\t" % mut_wt_rep_c_pvals[i]
+        this_outline += "\t%f\t" % mut_wt_rep_c_pvals[i]
         this_outline += "%f\t" % mut_wt_conn_c_pvals[i]
         this_outline += "%f\n" % mut_wt_rep_vs_wt_mut_conn_c_pvals[i]
 
@@ -458,8 +465,12 @@ def run_main(sig_info=None, gctx = None, allele_col = None, o = None, r = None,
 
     outlines = []
 
+    print allele2WT
+
     # Build comparison
     for allele in allele2WT:
+
+	print allele
 
         # Don't calculate for the WT allele
         if allele == allele2WT[allele]:

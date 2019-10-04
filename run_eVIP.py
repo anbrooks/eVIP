@@ -204,7 +204,7 @@ def run_eVIP(infile=None, zscore_gct = None, out_directory=None, sig_info =None,
                 out_dir = out_directory+"/viz",ymin = args.viz_ymin, ymax= args.viz_ymax, allele_col = args.allele_col, use_c_pval = args.use_c_pval,
                  pdf = args.pdf, cell_id = args.cell_id, plate_id = args.plate_id, corr_val_str= args.corr_val)
 
-    print "eVIP is DONE"
+    # print "eVIP is DONE"
 
 def make_adj_compare_file(pathway_list, out_directory,eVIPP_adj_pways_mut_wt_rep_c_pvals_from_compare,eVIPP_adj_pways_mut_wt_conn_null_c_pvals_from_compare,eVIPP_adj_pways_wt_mut_rep_vs_wt_mut_conn_c_pvals_from_compare):
 
@@ -583,10 +583,8 @@ def JSON_pway():
                 used_pathways.append(pathway)
 
             else:
-                print "Less than 2 matched genes...skipping eVIP for pathway"
+                print "Not enough matched genes...skipping eVIP for pathway"
 
-            print "used pathways:"
-            print used_pathways
 
         # running eVIP when the input is expression data
         if args.zscore_gct:
