@@ -9,16 +9,18 @@ import os, sys
 import pandas as pd
 import numpy as np
 
+#supressing rpy2 warnings
+import warnings
+from rpy2.rinterface import RRuntimeWarning
+warnings.filterwarnings("ignore", category=RRuntimeWarning)
+
 from rpy2 import robjects
 from rpy2.robjects import r,pandas2ri, Formula
 from rpy2.robjects.lib import grid
 pandas2ri.activate()
 R = robjects.r
 
-#supressing rpy2 warnings
-import warnings
-from rpy2.rinterface import RRuntimeWarning
-warnings.filterwarnings("ignore", category=RRuntimeWarning)
+
 
 
 ########################################################################
@@ -68,7 +70,7 @@ class CommandLine(object) :
             self.args = vars(self.parser.parse_args(inOpts))
 
 # main
-def main():
+def main(group1=None, group2=None, outDir=None, inDir=None, formula=None):
     '''
     main
     '''
@@ -77,13 +79,14 @@ def main():
     myCommandLine = CommandLine()
 
     indir      = myCommandLine.args['inDir']
-
     outdir     = myCommandLine.args['outDir']
     group1     = myCommandLine.args['group1']
     group2     = myCommandLine.args['group2']
     formula    = myCommandLine.args['formula']
 
     R.assign('indir',indir)
+    R.assign('outdir',outdir)
+
     R.assign('group1',group1)
     R.assign('group2',group2)
 
@@ -103,27 +106,13 @@ def main():
     R('tx2gene = transcripts(edb , columns=c("tx_id", "gene_name"),return.type="DataFrame")')
 
     # import formula
-    formulaDF     = pd.read_csv(formula,header=0, sep="\t",index_col=0)
-    print("pandas df")
-    print(formulaDF)
+    formulaDF     = pd.read_csv(formula,header=0, sep="\t")
 
-    samples =  formulaDF.index.tolist()
+    samples =  formulaDF.samples.tolist()
     R.assign('samples',samples)
 
     sampleTable = pandas2ri.py2ri(formulaDF)
     R.assign('sampleTable',sampleTable)
-
-    R('colnames(sampleTable) = c("condition")')
-
-    R('sampleTable$ID <- seq.int(nrow(sampleTable))')
-
-
-    # R('sampleTable <- data.frame(samples=samples, condition=condition)')
-
-
-    print("R df:")
-    R('print(sampleTable)')
-
 
     #locate kallisto files
     R('files <- file.path(indir, samples, "abundance.h5")')
@@ -132,72 +121,28 @@ def main():
     #tximport conversion to gene
     R('txi.kallisto <- tximport(files, type = "kallisto",tx2gene = tx2gene, txOut = FALSE,ignoreTxVersion=TRUE)')
     R('rownames(sampleTable) <- samples')
-    R('print(sampleTable)')
 
     #DESeq
     R('dds <- DESeqDataSetFromTximport(txi.kallisto, sampleTable, ~condition)')
+    R('colData(dds)$condition<-factor(colData(dds)$condition, levels=c(group1,group2))')
 
-
-    R('colData(dds)$condition<-factor(colData(dds)$condition, levels=c("group1","group2"))')
-
-    print("~~~~~colData")
+    #printing samples and condition
     R('print(colData(dds))')
 
-    R('GFP_659_dds<-DESeq(dds)')
-    R('GFP_659_res<-results(GFP_659_dds)')
-    R('GFP_659_res<-GFP_659_res[order(GFP_659_res$padj),]')
+    R('dds_<-DESeq(dds)')
+    R('res<-results(dds_)')
+    R('res<-res[order(res$padj),]')
 
-    R('print(head(GFP_659_res))')
+    print("Deseq2 results")
+    R('print(head(res))')
 
-    #writing deseq2 results to a file
-    # R(write.csv(as.data.frame(GFP_659_res),file='GFP_vs_659_results_deseq2.csv'))
+    # writing deseq2 results to a file
+    # R(write.csv(as.data.frame(res),file='GFP_vs_659_results_deseq2.csv'))
 
+    Out = os.path.join(outdir, "%s_v_%s_deseq2_results.tsv"  % (group1,group2))
+    R.assign('Out',Out)
 
-# ## Merge with normalized count data
-# GFP_659_resdata <- merge(as.data.frame(GFP_659_res), as.data.frame(counts(GFP_659_dds, normalized=TRUE)), by="row.names", sort=FALSE)
-# names(GFP_659_resdata)[1] <- "Gene"
-# head(GFP_659_resdata)
-# mcols(GFP_659_res,use.names=TRUE)
-# write.csv(as.data.frame(GFP_659_res),file='GFP_vs_659_results_deseq2.csv')
-# write.csv(as.data.frame(GFP_659_resdata),file='GFP_vs_659_results_deseq2_counts.csv')
+    R('write.csv(as.data.frame(res),file=Out)')
 
-
-
-    """
-
-    # make the quant DF
-    quantDF  = pd.read_table(matrix, header=0, sep='\t', index_col=0)
-    df = pandas2ri.py2ri(quantDF)
-
-
-
-    ### RUN DESEQ2 ###
-    R.assign('df', df)
-    R.assign('sampleTable', sampleTable)
-    R.assign('design',design)
-    R('dds <- DESeqDataSetFromMatrix(countData = df, colData = sampleTable, design = design)')
-    R('dds <- DESeq(dds)')
-    R('name <- grep("condition", resultsNames(dds), value=TRUE)')
-
-    ###
-    ###
-    # Get Results and shrinkage values
-    res    = R('results(dds, name=name)')
-    resLFC = R('lfcShrink(dds, coef=name)')
-    vsd    = R('vst(dds,blind=FALSE)')
-    resdf  = robjects.r['as.data.frame'](res)
-    reslfc = robjects.r['as.data.frame'](resLFC)
-    dds    = R('dds')
-
-
-
-    data_folder = os.path.join(os.getcwd(), outdir)
-    lfcOut = os.path.join(data_folder, "%s_%s_v_%s_deseq2_results_shrinkage.tsv"  % (prefix,group1,group2))
-    resOut = os.path.join(data_folder, "%s_%s_v_%s_deseq2_results.tsv"  % (prefix,group1,group2))
-
-    robjects.r['write.table'](reslfc, file=lfcOut, quote=False, sep="\t")
-    robjects.r['write.table'](resdf, file=resOut, quote=False, sep="\t")
-
-    """
 if __name__ == "__main__":
     main()
