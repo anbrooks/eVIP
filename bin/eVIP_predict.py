@@ -12,7 +12,7 @@
 
 
 import sys
-import optparse 
+import optparse
 import os
 import pdb
 import csv
@@ -48,14 +48,14 @@ class OptionParser(optparse.OptionParser):
 ###############
 # END CLASSES #
 ###############
- 
+
 ########
-# MAIN #	
+# MAIN #
 ########
 def main():
-	
+
     opt_parser = OptionParser()
-   
+
     # Add Options. Required options should have default=None
     opt_parser.add_option("-i",
                           dest="input_table",
@@ -120,7 +120,7 @@ def main():
                           default=False)
 
     (options, args) = opt_parser.parse_args()
-	
+
     # validate the command line arguments
     opt_parser.check_required("-i")
     opt_parser.check_required("-o")
@@ -135,8 +135,8 @@ def main():
     input_table = open(options.input_table)
     output = open(options.output_table, "w")
 
-#   r_thresh = options.robust_thresh 
-    c_thresh = options.conn_thresh 
+#   r_thresh = options.robust_thresh
+    c_thresh = options.conn_thresh
     mut_wt_thresh = options.mut_wt_thresh
     disting_thresh = options.disting_thresh
 
@@ -151,6 +151,7 @@ def main():
 
     file_reader = csv.DictReader(input_table, delimiter="\t")
 
+
     column_headers = ["gene",
                       "mut",
                       "mut_rep",
@@ -158,27 +159,14 @@ def main():
                       "mut_wt_connectivity",
                       "wt",
                       "cell_line",
-                      "mut_rep_null_pval",
-                      "wt_rep_null_pval",
                       "mut_wt_rep_pval",
                       "mut_wt_conn_null_pval",
                       "wt_mut_rep_vs_wt_mut_conn_pval",
-                      "mut_rep_null_c_pval",
-                      "wt_rep_null_c_pval",
                       "mut_wt_rep_c_pval",
                       "mut_wt_conn_null_c_pval",
                       "wt_mut_rep_vs_wt_mut_conn_c_pval",
                       "prediction"]
 
-# The prediction is based off of Scenario_7_decision_tree_COF
-
-#                     "Scenario_1__90rankpt_thresh",
-#                     "Scenario_2__rankpt_thresh",
-#                     "Scenario_3__pval_thresh",
-#                     "Scenario_4__diff_robust",
-#                     "Scenario_5__diff_robust_decision_tree",
-#                     "Scenario_6__decision_tree_swap",
-#                     "Scenario_7__decision_tree_COF"]
 
     file_writer = csv.DictWriter(output, delimiter="\t",
                                  fieldnames=column_headers)
@@ -186,33 +174,38 @@ def main():
 
     for row in file_reader:
         if use_c_pval:
-            row["prediction"] = get_prediction_6(float(row["wt_rep"]),
-                                                                 float(row["mut_rep"]),
-                                                                 float(row["mut_wt_rep_c_pval"]),
-                                                                 float(row["mut_wt_connectivity"]),
-                                                                 float(row["mut_wt_conn_null_c_pval"]),
-                                                                 float(row["wt_mut_rep_vs_wt_mut_conn_c_pval"]),
-                                                                 mut_wt_thresh,
-                                                                 mut_wt_rep_diff,
-                                                                 c_thresh, 
-                                                                 disting_thresh)
-            row["prediction"] = get_prediction_6(float(row["wt_rep"]),
-                                                                 float(row["mut_rep"]),
-                                                                 float(row["mut_wt_rep_pval"]),
-                                                                 float(row["mut_wt_connectivity"]),
-                                                                 float(row["mut_wt_conn_null_pval"]),
-                                                                 float(row["wt_mut_rep_vs_wt_mut_conn_pval"]),
-                                                                 mut_wt_thresh,
-                                                                 mut_wt_rep_diff,
-                                                                 c_thresh, 
-                                                                 disting_thresh)
+            prediction = get_prediction_6(float(row["wt_rep"]),
+                                                 float(row["mut_rep"]),
+                                                 float(row["mut_wt_rep_c_pval"]),
+                                                 float(row["mut_wt_connectivity"]),
+                                                 float(row["mut_wt_conn_null_c_pval"]),
+                                                 float(row["wt_mut_rep_vs_wt_mut_conn_c_pval"]),
+                                                 mut_wt_thresh,
+                                                 mut_wt_rep_diff,
+                                                 c_thresh,
+                                                 disting_thresh)
+            row["prediction"]= prediction
+
+        else:
+            prediction = get_prediction_6(float(row["wt_rep"]),
+                                                 float(row["mut_rep"]),
+                                                 float(row["mut_wt_rep_pval"]),
+                                                 float(row["mut_wt_connectivity"]),
+                                                 float(row["mut_wt_conn_null_pval"]),
+                                                 float(row["wt_mut_rep_vs_wt_mut_conn_pval"]),
+                                                 mut_wt_thresh,
+                                                 mut_wt_rep_diff,
+                                                 c_thresh,
+                                                 disting_thresh)
+
+            row["prediction"]= prediction
 
         file_writer.writerow(row)
 
     input_table.close()
     output.close()
 
-			
+
     sys.exit(0)
 
 
@@ -310,7 +303,7 @@ def formatLine(line):
     line = line.replace("\n","")
     return line
 
-def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval, 
+def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
                      mut_wt_conn, mut_wt_conn_pval, disting_pval,
                      mut_wt_thresh, mut_wt_rep_diff, c_thresh, disting_thresh):
 
@@ -344,7 +337,7 @@ def get_prediction_6(wt_rep, mut_rep, mut_wt_rep_pval,
     if mut_wt_conn_pval < c_thresh:
         return "Neutral"
 
-    return "NI"   
+    return "NI"
 
 def max_diff(wt_rep, mut_rep, mut_wt_conn):
     max_diff = abs(wt_rep - mut_rep)
@@ -359,6 +352,6 @@ def max_diff(wt_rep, mut_rep, mut_wt_conn):
 
     return max_diff
 #################
-# END FUNCTIONS #	
-#################	
+# END FUNCTIONS #
+#################
 if __name__ == "__main__": main()
