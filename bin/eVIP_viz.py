@@ -17,15 +17,14 @@ import os
 import pdb
 import csv
 import random
-
-from eVIP_compare import getSelfConnectivity, getConnectivity
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.spatial.distance as distance
 import scipy.cluster.hierarchy as sch
-
 import cmap.io.gct as gct
+
+from eVIP_compare import getSelfConnectivity, getConnectivity
+
 
 #############
 # CONSTANTS #
@@ -43,8 +42,12 @@ CONN_RANGE = [29,31]
 JITTER_XTICKS = [10, 20, 30]
 XMAX = 40
 
-DEF_YMIN = -100
-DEF_YMAX = 100
+# DEF_YMIN = -100
+# DEF_YMAX = 100
+
+DEF_YMIN = -1.00
+DEF_YMAX = 1.00
+
 DEF_CORR_VAL_STR = "row median rankpoints"
 DEF_ALLELE_COL = "x_mutation_status"
 
@@ -369,9 +372,11 @@ def eVIP_run_main(pred_file=None, sig_info =None, gctx=None,
 
 
     #setting default values
-    ymin = int(ymin) if ymin != None else int(-100)
-    ymax = int(ymax) if ymax != None else int(100)
+    # ymin = int(ymin) if ymin != None else int(-100)
+    # ymax = int(ymax) if ymax != None else int(100)
 
+    ymin = int(ymin) if ymin != None else int(-1.00)
+    ymax = int(ymax) if ymax != None else int(1.00)
 
 
     pred_file = open(pred_file)
@@ -734,9 +739,11 @@ def plot_jitter(jitter_ax, col_counter,
                    size='x-small')
 
 def plot_rep_heatmap(heatmap_ax, df, distil_ids1, distil_ids2, title, ymin, ymax):
+
     heatmap_data = df.loc[distil_ids1,distil_ids2]
     dists = distance.squareform(distance.pdist(heatmap_data))
     clusters = sch.linkage(dists, method="average")
+
     den = sch.dendrogram(clusters,color_threshold=np.inf, no_plot=True)
 
     this_im = heatmap_ax.imshow(heatmap_data.ix[den['leaves'],den['leaves']],

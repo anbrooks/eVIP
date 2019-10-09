@@ -1,17 +1,20 @@
 #!/usr/bin/python
+import sys
 import argparse
 import os
 import errno
 import csv
-import eVIP_corr
-import eVIP_predict
-import eVIP_sparkler
-import eVIP_viz
-import eVIP_compare
 import itertools
 import rpy2.robjects as robjects
 import json
-#import eVIPP_sparkler
+
+#importing eVIP
+from bin import eVIP_corr
+from bin import eVIP_predict
+from bin import eVIP_sparkler
+from bin import eVIP_viz
+from bin import eVIP_compare
+from bin import eVIPP_sparkler
 
 ########
 # MAIN #
@@ -139,11 +142,11 @@ def main(infile=None, zscore_gct = None, out_directory=None, sig_info =None, c=N
         summarize_predict_files(used_pathways, summary_eVIPP_vals)
 
         #eVIPP sparkler
-#
-#        print "Making allele pathway sparkler plots..."
-#        run_eVIPP_sparkler = eVIPP_sparkler.main(pred_file= out_dir + "/eVIPP_combined_predict_files.txt", ref_allele_mode=args.ref_allele_mode, y_thresh=args.y_thresh, x_thresh=args.x_thresh, use_c_pval=args.use_c_pval,
-#                  annotate=args.annotate, by_gene_color=args.by_gene_color, pdf=args.pdf, xmin=args.xmin, xmax=args.xmax, ymin=args.ymin, ymax=args.ymax,
-#                  out_dir= out_dir + "/eVIPP_sparkler_plots")
+
+        print "Making allele pathway sparkler plots..."
+        run_eVIPP_sparkler = eVIPP_sparkler.main(pred_file= out_dir + "/eVIPP_combined_predict_files.txt", ref_allele_mode=args.ref_allele_mode, y_thresh=args.y_thresh, x_thresh=args.x_thresh, use_c_pval=args.use_c_pval,
+                 annotate=args.annotate, by_gene_color=args.by_gene_color, pdf=args.pdf, xmin=args.xmin, xmax=args.xmax, ymin=args.ymin, ymax=args.ymax,
+                 out_dir= out_dir + "/eVIPP_sparkler_plots")
 
 
 ############
@@ -201,7 +204,7 @@ def run_eVIP(infile=None, zscore_gct = None, out_directory=None, sig_info =None,
                 out_dir = out_directory+"/viz",ymin = args.viz_ymin, ymax= args.viz_ymax, allele_col = args.allele_col, use_c_pval = args.use_c_pval,
                  pdf = args.pdf, cell_id = args.cell_id, plate_id = args.plate_id, corr_val_str= args.corr_val)
 
-    print "eVIP is DONE"
+    # print "eVIP is DONE"
 
 def make_adj_compare_file(pathway_list, out_directory,eVIPP_adj_pways_mut_wt_rep_c_pvals_from_compare,eVIPP_adj_pways_mut_wt_conn_null_c_pvals_from_compare,eVIPP_adj_pways_wt_mut_rep_vs_wt_mut_conn_c_pvals_from_compare):
 
@@ -390,6 +393,7 @@ def summarize_predict_files(pathway_list, output_file):
                 else:
                     output_file.write(pathway +"\t"+ line)
 
+    output_file.close()
 
 def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
@@ -574,14 +578,11 @@ def JSON_pway():
                 percent_matched = (float(len(matched_ids))/(float(len(pathway_genes))))*100
                 print "percent matched: " + str(percent_matched)
 
-            if float(matched_length) > (int(args.min_genes) if args.min_genes else 4):
+            if float(matched_length) > (int(args.min_genes)-1 if args.min_genes else 4):
                 used_pathways.append(pathway)
 
             else:
-                print "Less than 2 matched genes...skipping eVIP for pathway"
-
-            print "used pathways:"
-            print used_pathways
+                print "Not enough matched genes...skipping eVIP for pathway"
 
         # running eVIP when the input is expression data
         if args.zscore_gct:
@@ -648,7 +649,7 @@ def JSON_pway():
                 percent_matched = (float(len(matched_ids))/(float(len(pathway_genes))))*100
                 print "percent matched: " + str(percent_matched)
 
-                if float(matched_length) > (int(args.min_genes) if args.min_genes else 4):
+                if float(matched_length) > (int(args.min_genes)-1 if args.min_genes else 4):
                     used_pathways.append(pathway)
 
                 else:
